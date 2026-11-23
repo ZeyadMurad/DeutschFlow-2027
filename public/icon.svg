@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="dfBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0D4A42" />
+      <stop offset="100%" stop-color="#052420" />
+    </linearGradient>
+    <linearGradient id="dfGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F7DF8A" />
+      <stop offset="50%" stop-color="#D4AF37" />
+      <stop offset="100%" stop-color="#9A731D" />
+    </linearGradient>
+    <linearGradient id="dfTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1FB8A6" />
+      <stop offset="100%" stop-color="#084C44" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#dfBg)" stroke="url(#dfGold)" stroke-width="3" />
+  <path d="M18 14H33C44.5 14 52 21.5 52 32C52 42.5 44.5 50 33 50H18V14Z" fill="url(#dfTeal)" stroke="url(#dfGold)" stroke-width="2.5" stroke-linejoin="round" />
+  <path d="M26 22L42 32L26 42V22Z" fill="#0F1419" stroke="url(#dfGold)" stroke-width="2" stroke-linejoin="round" />
+  <clipPath id="playClip">
+    <path d="M27.5 24.5L39.5 32L27.5 39.5V24.5Z" />
+  </clipPath>
+  <g clip-path="url(#playClip)">
+    <rect x="27" y="24" width="14" height="5.4" fill="#111111" />
+    <rect x="27" y="29.4" width="14" height="5.3" fill="#DD0000" />
+    <rect x="27" y="34.7" width="14" height="5.5" fill="#FFCE00" />
+  </g>
+</svg>

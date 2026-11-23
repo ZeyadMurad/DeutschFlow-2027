@@ -44,12 +44,12 @@ export const MAIN_SECTIONS: SectionDefinition[] = [
   },
   {
     id: 'youtube',
-    titleAr: 'قنوات يوتيوب',
-    titleDe: 'YouTube-Kanäle',
-    titleEn: 'YouTube Channels',
-    subtitleAr: 'أحدث الفيديوهات بصورها الحقيقية وتشغيل رسمي داخل التطبيق',
-    subtitleDe: 'Aktuelle Videos & offizielle Player-Integration',
-    subtitleEn: 'Latest German videos with embedded official player',
+    titleAr: 'German Studio',
+    titleDe: 'German Studio',
+    titleEn: 'German Studio',
+    subtitleAr: 'قنوات وبرامج الفيديو الألمانية المختارة وتشغيل رسمي داخل التطبيق',
+    subtitleDe: 'Kuratierte deutsche Videokanäle & integrierter Player',
+    subtitleEn: 'Curated German video channels with embedded official player',
     accent: 'coral',
   },
   {

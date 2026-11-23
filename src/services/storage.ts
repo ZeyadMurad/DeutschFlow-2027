@@ -125,7 +125,7 @@ export function persistUserData(data: UserLearningData): void {
 export function exportUserDataJson(data: UserLearningData): string {
   return JSON.stringify(
     {
-      app: 'DeutschFlow Ultimate',
+      app: 'DeutschFlow',
       exportedAt: new Date().toISOString(),
       version: 1,
       data,
@@ -177,6 +177,10 @@ export function createVocabEntry(params: {
   sourceTitle: string;
   sourceUrl?: string;
   note?: string;
+  lemma?: string;
+  partOfSpeech?: string;
+  article?: string;
+  plural?: string;
 }): VocabItem {
   return {
     id: `voc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
@@ -186,6 +190,10 @@ export function createVocabEntry(params: {
     sourceTitle: params.sourceTitle,
     sourceUrl: params.sourceUrl,
     note: params.note?.trim() || undefined,
+    lemma: params.lemma?.trim() || undefined,
+    partOfSpeech: params.partOfSpeech?.trim() || undefined,
+    article: params.article?.trim() || undefined,
+    plural: params.plural?.trim() || undefined,
     createdAt: new Date().toISOString(),
   };
 }

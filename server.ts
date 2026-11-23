@@ -4,9 +4,8 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { XMLParser } from 'fast-xml-parser';
-import { GoogleGenAI } from '@google/genai';
+import { lookupGermanDictionary } from './server/dictionary.js';
 import {
-  CORE_DE_AR_DICTIONARY,
   CURATED_GERMAN_TITLES,
   NEWS_SOURCES,
   PODCAST_SOURCES,
@@ -1188,63 +1187,51 @@ async function startServer() {
     });
   });
 
-  // On-demand German -> Arabic translation (user triggered only)
-  app.post('/api/translate', async (req, res) => {
-    const { text, target = 'ar' } = (req.body || {}) as { text?: string; target?: string };
-    const clean = typeof text === 'string' ? text.trim().slice(0, 350) : '';
-    if (!clean) {
-      res.status(400).json({ error: 'Text is required' });
-      return;
-    }
-
-    const singleKey = clean.toLowerCase().replace(/[.,!?;:"'()«»„“]/g, '');
-    if (target === 'ar' && CORE_DE_AR_DICTIONARY[singleKey]) {
-      res.json({
-        word: clean,
-        translation: CORE_DE_AR_DICTIONARY[singleKey],
-        provider: 'local_glossary',
-      });
-      return;
-    }
-
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (geminiKey && geminiKey !== 'MY_GEMINI_API_KEY') {
-      try {
-        const ai = new GoogleGenAI({ apiKey: geminiKey });
-        const langLabel = target === 'en' ? 'English' : 'Arabic';
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: `Translate this German word or short phrase accurately and concisely into ${langLabel} for a German language learner. Return ONLY the concise ${langLabel} translation (with 1-2 short synonyms if helpful), nothing else:\n\n"${clean}"`,
-        });
-        const out = response.text?.trim();
-        if (out) {
-          res.json({ word: clean, translation: out, provider: 'gemini' });
-          return;
-        }
-      } catch {
-        // Fall through to MyMemory
-      }
-    }
-
+  // On-demand multi-source German -> Arabic/English dictionary (context-aware, always JSON)
+  const handleDictionaryLookup = async (req: express.Request, res: express.Response) => {
     try {
-      const pair = target === 'en' ? 'de|en' : 'de|ar';
-      const mmUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=${pair}`;
-      const r = await fetchWithTimeout(mmUrl, 5000);
-      if (r.ok) {
-        const j = (await r.json()) as { responseData?: { translatedText?: string } };
-        const tr = j.responseData?.translatedText?.trim();
-        if (tr) {
-          res.json({ word: clean, translation: tr, provider: 'mymemory' });
-          return;
-        }
-      }
-    } catch {
-      // Ignore and report fallback
-    }
+      const body = (req.body || {}) as { text?: string; sentence?: string; target?: string };
+      const text = typeof body.text === 'string' ? body.text.trim() : '';
+      const sentence = typeof body.sentence === 'string' ? body.sentence.trim() : '';
+      const target: 'ar' | 'en' = body.target === 'en' ? 'en' : 'ar';
 
-    res.status(503).json({
-      error: 'Translation service temporarily unavailable. You can enter your own translation.',
-    });
+      if (!text) {
+        res.status(400).json({ error: 'يرجى تحديد كلمة ألمانية للبحث عنها في المعجم.' });
+        return;
+      }
+
+      const result = await lookupGermanDictionary({ text, sentence, target });
+      if (result) {
+        res.json(result);
+        return;
+      }
+
+      res.status(404).json({
+        error: 'تعذر العثور على ترجمة فورية لهذه الكلمة حالياً. يمكنك كتابة الترجمة يدوياً وحفظها.',
+      });
+    } catch {
+      res.status(500).json({
+        error: 'حدث خطأ غير متوقع في المعجم. يمكنك كتابة الترجمة يدوياً وحفظها.',
+      });
+    }
+  };
+
+  app.post('/api/translate', handleDictionaryLookup);
+  app.post('/api/dictionary', handleDictionaryLookup);
+
+  // Guarantee /api/* requests NEVER fall through to Vite or SPA HTML index fallback
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'API endpoint not found' });
+  });
+
+  // Express error middleware returning strict JSON for API routes
+  app.use((err: unknown, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (req.path.startsWith('/api')) {
+      const msg = err instanceof Error ? err.message : 'Internal server error';
+      res.status(500).json({ error: msg });
+      return;
+    }
+    next(err);
   });
 
   // Vite dev middleware vs static production serving
@@ -1269,7 +1256,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`DeutschFlow Ultimate server running at http://localhost:${PORT}`);
+    console.log(`DeutschFlow server running at http://localhost:${PORT}`);
   });
 }
 

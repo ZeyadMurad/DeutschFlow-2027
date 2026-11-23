@@ -230,7 +230,24 @@ export interface VocabItem {
   sourceTitle: string;
   sourceUrl?: string;
   note?: string;
+  lemma?: string;
+  partOfSpeech?: string;
+  article?: string;
+  plural?: string;
   createdAt: string;
+}
+
+export interface DictionaryLookupResult {
+  word: string;
+  lemma: string;
+  translation: string;
+  partOfSpeech: string;
+  article?: string;
+  plural?: string;
+  explanation?: string;
+  alternatives?: string[];
+  provider: string;
+  cached?: boolean;
 }
 
 export interface HistoryItem {

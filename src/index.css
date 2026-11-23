@@ -1,20 +1,22 @@
 @import "tailwindcss";
 
 :root {
+  --df-emerald: #093d38;
+  --df-petrol: #0d4a42;
+  --df-petrol-dark: #052522;
+  --df-petrol-soft: rgba(13, 74, 66, 0.08);
+  --df-gold: #c8962e;
+  --df-gold-bright: #e8c35a;
+  --df-gold-soft: rgba(200, 150, 46, 0.14);
+  --df-coral: #d85a40;
+  --df-coral-soft: rgba(216, 90, 64, 0.12);
   --df-cream: #f7f3ea;
   --df-cream-deep: #efe8d8;
+  --df-ivory: #faf7f0;
   --df-surface: #ffffff;
-  --df-surface-muted: #faf7f0;
-  --df-petrol: #0e4b4b;
-  --df-petrol-dark: #093535;
-  --df-petrol-soft: rgba(14, 75, 75, 0.08);
-  --df-coral: #d85a40;
-  --df-coral-soft: rgba(216, 90, 64, 0.11);
-  --df-gold: #b68934;
-  --df-gold-soft: rgba(182, 137, 52, 0.13);
-  --df-ink: #1a2421;
+  --df-ink: #172320;
   --df-ink-muted: #52615d;
-  --df-border: rgba(14, 75, 75, 0.11);
+  --df-border: rgba(13, 74, 66, 0.12);
 }
 
 html {
@@ -52,25 +54,66 @@ body {
   outline-offset: 2px;
 }
 
-/* Editorial hairline card */
+/* Editorial card with refined 3D glass depth */
 .df-card {
   background-color: var(--df-surface);
   border: 1px solid var(--df-border);
-  box-shadow: 0 2px 12px rgba(14, 75, 75, 0.04);
-  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow:
+    0 2px 10px rgba(9, 61, 56, 0.04),
+    0 1px 2px rgba(9, 61, 56, 0.03);
+  transition:
+    transform 190ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 190ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 190ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .df-card-hover:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgba(14, 75, 75, 0.08);
-  border-color: rgba(14, 75, 75, 0.24);
+  transform: translateY(-3px);
+  box-shadow:
+    0 14px 30px rgba(9, 61, 56, 0.09),
+    0 4px 10px rgba(200, 150, 46, 0.08);
+  border-color: rgba(13, 74, 66, 0.28);
+}
+
+/* 3D Glassmorphic / Holographic Icon Stage */
+.df-icon-stage {
+  position: relative;
+  background: radial-gradient(
+    circle at 30% 25%,
+    rgba(31, 184, 166, 0.16) 0%,
+    rgba(13, 74, 66, 0.1) 52%,
+    rgba(5, 37, 34, 0.16) 100%
+  );
+  border: 1px solid rgba(200, 150, 46, 0.28);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.72),
+    inset 0 -3px 8px rgba(9, 61, 56, 0.14),
+    0 6px 14px rgba(9, 61, 56, 0.11);
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.group:hover .df-icon-stage {
+  transform: translateY(-2px) scale(1.06);
+  border-color: rgba(200, 150, 46, 0.58);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.85),
+    0 10px 22px rgba(13, 74, 66, 0.2),
+    0 0 16px rgba(31, 184, 166, 0.22);
+}
+
+.group:active .df-icon-stage {
+  transform: scale(0.97);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .df-card,
-  .df-card-hover:hover {
+  .df-card-hover:hover,
+  .df-icon-stage,
+  .group:hover .df-icon-stage,
+  .group:active .df-icon-stage {
     transition: none;
     transform: none;
   }

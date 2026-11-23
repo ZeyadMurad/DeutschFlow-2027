@@ -253,12 +253,30 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
               {filteredVocab.map((v) => (
                 <article key={v.id} className="df-card rounded-2xl p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <span className="text-base font-bold text-[#0E4B4B] font-german" dir="ltr">
-                        {v.word}
-                      </span>
-                      <span className="mx-2 text-[#52615D]">—</span>
-                      <span className="text-sm font-semibold text-[#D85A40]">{v.translation}</span>
+                    <div className="space-y-0.5">
+                      <div>
+                        <span className="text-base font-bold text-[#0E4B4B] font-german" dir="ltr">
+                          {v.article ? `${v.article} ` : ''}
+                          {v.word}
+                        </span>
+                        <span className="mx-2 text-[#52615D]">—</span>
+                        <span className="text-sm font-semibold text-[#D85A40]">{v.translation}</span>
+                      </div>
+                      {(v.lemma || v.partOfSpeech || v.plural) && (
+                        <p className="text-[11px] text-[#52615D] flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                          {v.partOfSpeech && <span>{v.partOfSpeech}</span>}
+                          {v.lemma && (
+                            <span className="font-german" dir="ltr">
+                              Lemma: {v.lemma}
+                            </span>
+                          )}
+                          {v.plural && (
+                            <span className="font-german" dir="ltr">
+                              Pl.: {v.plural}
+                            </span>
+                          )}
+                        </p>
+                      )}
                     </div>
                     <button
                       type="button"

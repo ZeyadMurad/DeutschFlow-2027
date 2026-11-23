@@ -452,8 +452,13 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
                     dir="ltr"
                     lang="de"
                   >
+                    {currentCard.article ? `${currentCard.article} ` : ''}
                     {currentCard.word}
+                    {currentCard.plural ? ` (${currentCard.plural})` : ''}
                   </p>
+                  {currentCard.partOfSpeech && (
+                    <p className="text-[11px] text-[#52615D] mb-1">{currentCard.partOfSpeech}</p>
+                  )}
                   <p className="text-2xl sm:text-3xl font-bold text-[#D85A40]">
                     {currentCard.translation}
                   </p>

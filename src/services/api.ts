@@ -1,5 +1,6 @@
 import type {
   CustomRSSSource,
+  DictionaryLookupResult,
   MovieSeriesTitle,
   NewsArticle,
   NewsCategory,
@@ -14,6 +15,21 @@ import type {
   YouTubeChannelMeta,
   YouTubeVideo,
 } from '../types/media';
+
+const CLIENT_DICT_CACHE = new Map<string, DictionaryLookupResult>();
+
+async function parseJsonSafely<T>(res: Response): Promise<T> {
+  const ct = (res.headers.get('content-type') || '').toLowerCase();
+  const text = await res.text();
+  if (!ct.includes('application/json')) {
+    throw new Error('استجاب الخادم بتنسيق غير متوقع. يرجى المحاولة مرة أخرى.');
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error('تعذر قراءة بيانات الاستجابة من الخادم.');
+  }
+}
 
 const SNAPSHOT_PREFIX = 'df_cache_snapshot_v1_';
 
@@ -280,22 +296,35 @@ export async function validateCustomRss(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ rssUrl, name }),
   });
-  const data = await res.json();
+  const data = await parseJsonSafely<{ valid: boolean; name: string; rssUrl: string; error?: string }>(res);
   if (!res.ok) throw new Error(data.error || 'Validation failed');
   return data;
 }
 
 export async function translateGermanOnDemand(
   text: string,
-  target: 'ar' | 'en' = 'ar'
-): Promise<{ word: string; translation: string; provider: string }> {
+  target: 'ar' | 'en' = 'ar',
+  sentence = ''
+): Promise<DictionaryLookupResult> {
+  const clean = text.trim();
+  const cacheKey = `${target}::${clean.toLowerCase()}::${sentence.slice(0, 60).toLowerCase()}`;
+  const cached = CLIENT_DICT_CACHE.get(cacheKey);
+  if (cached) return { ...cached, cached: true };
+
   const res = await fetch('/api/translate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, target }),
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({ text: clean, sentence, target }),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Translation unavailable');
+
+  const data = await parseJsonSafely<DictionaryLookupResult & { error?: string }>(res);
+  if (!res.ok) {
+    throw new Error(data.error || 'تعذرت الترجمة الفورية حالياً.');
+  }
+  CLIENT_DICT_CACHE.set(cacheKey, data);
   return data;
 }
 

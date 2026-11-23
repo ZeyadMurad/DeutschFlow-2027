@@ -66,12 +66,12 @@ export const SectionShell: React.FC<SectionShellProps> = ({
       </div>
 
       {/* Section Title Header */}
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-5 sm:p-6 mb-6 flex items-center gap-4 sm:gap-5">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-[#F7F3EA] border border-[#0E4B4B]/10 flex items-center justify-center shrink-0">
-          {renderSectionSvgIcon(sectionId, 'w-10 h-10 sm:w-11 sm:h-11')}
+      <div className="bg-white rounded-2xl border border-[#0D4A42]/14 shadow-xs p-5 sm:p-6 mb-6 flex items-center gap-4 sm:gap-5">
+        <div className="df-icon-stage w-15 h-15 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shrink-0">
+          {renderSectionSvgIcon(sectionId, 'w-11 h-11 sm:w-12 sm:h-12')}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-editorial font-semibold text-[#0E4B4B]">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-editorial font-semibold text-[#093D38]">
             {getSectionTitle(def, lang)}
           </h1>
           <p className="text-sm text-[#52615D] mt-1">{getSectionSubtitle(def, lang)}</p>

@@ -30,6 +30,10 @@ interface UserDataContextValue {
     sourceTitle: string;
     sourceUrl?: string;
     note?: string;
+    lemma?: string;
+    partOfSpeech?: string;
+    article?: string;
+    plural?: string;
   }) => void;
   updateVocabNote: (id: string, note: string) => void;
   removeVocab: (id: string) => void;
@@ -107,12 +111,39 @@ export const UserDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       sourceTitle: string;
       sourceUrl?: string;
       note?: string;
+      lemma?: string;
+      partOfSpeech?: string;
+      article?: string;
+      plural?: string;
     }) => {
       const entry = createVocabEntry(params);
-      updateAndPersist((prev) => ({
-        ...prev,
-        vocabulary: [entry, ...prev.vocabulary],
-      }));
+      const normWord = entry.word.toLowerCase();
+      const normSent = entry.sentence.toLowerCase();
+      updateAndPersist((prev) => {
+        const existingIdx = prev.vocabulary.findIndex(
+          (v) =>
+            v.word.trim().toLowerCase() === normWord &&
+            v.sentence.trim().toLowerCase() === normSent
+        );
+        if (existingIdx >= 0) {
+          const updated = [...prev.vocabulary];
+          const prevItem = updated[existingIdx];
+          updated[existingIdx] = {
+            ...prevItem,
+            translation: entry.translation || prevItem.translation,
+            note: entry.note || prevItem.note,
+            lemma: entry.lemma || prevItem.lemma,
+            partOfSpeech: entry.partOfSpeech || prevItem.partOfSpeech,
+            article: entry.article || prevItem.article,
+            plural: entry.plural || prevItem.plural,
+          };
+          return { ...prev, vocabulary: updated };
+        }
+        return {
+          ...prev,
+          vocabulary: [entry, ...prev.vocabulary],
+        };
+      });
     },
     [updateAndPersist]
   );

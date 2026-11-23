@@ -6,6 +6,8 @@ import { PersistentAudioBar } from './components/players/PersistentAudioBar';
 import { YouTubeModalPlayer } from './components/players/YouTubeModalPlayer';
 import { ArticleReaderModal } from './components/readers/ArticleReaderModal';
 import { BrandCrestSvg, renderSectionSvgIcon } from './components/icons/SectionIcons';
+import { LandingPage } from './components/landing/LandingPage';
+import { OfflineIndicator, PWAInstallButton } from './components/pwa/PWAInstallButton';
 import { RadioSection } from './components/sections/RadioSection';
 import { NewsSection } from './components/sections/NewsSection';
 import { NewspapersSection } from './components/sections/NewspapersSection';
@@ -50,9 +52,16 @@ function readSectionFromHash(): AppSectionId {
   return VALID_SECTIONS.has(raw) ? raw : 'home';
 }
 
+function shouldStartOnLanding(): boolean {
+  if (typeof window === 'undefined') return false;
+  const hash = window.location.hash.replace(/^#/, '');
+  return !hash;
+}
+
 const DeutschFlowWorkspace: React.FC = () => {
   const { data } = useUserData();
   const [lang, setLang] = useState<UILanguage>('ar');
+  const [showLanding, setShowLanding] = useState<boolean>(() => shouldStartOnLanding());
   const [activeSection, setActiveSection] = useState<AppSectionId>(() => readSectionFromHash());
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -70,46 +79,83 @@ const DeutschFlowWorkspace: React.FC = () => {
 
   useEffect(() => {
     const onHashChange = () => {
-      setActiveSection(readSectionFromHash());
+      const next = readSectionFromHash();
+      setActiveSection(next);
+      if (window.location.hash) {
+        setShowLanding(false);
+      }
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, []);
 
   const navigateTo = useCallback((sec: AppSectionId) => {
+    setShowLanding(false);
     setActiveSection(sec);
     if (typeof window !== 'undefined') {
-      const nextHash = sec === 'home' ? '' : `#${sec}`;
+      const nextHash = sec === 'home' ? '#home' : `#${sec}`;
       if (window.location.hash !== nextHash) {
-        window.history.pushState(null, '', nextHash || window.location.pathname);
+        window.history.pushState(null, '', nextHash);
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, []);
 
+  const handleContinueFromLanding = useCallback(
+    (targetSection?: AppSectionId) => {
+      navigateTo(targetSection || 'home');
+    },
+    [navigateTo]
+  );
+
   const ui = UI_TEXT[lang];
 
+  if (showLanding) {
+    return (
+      <>
+        <LandingPage
+          lang={lang}
+          onChangeLang={setLang}
+          onContinue={handleContinueFromLanding}
+          savedVocabCount={data.vocabulary.length}
+          exposureMinutes={data.exposureMinutes}
+        />
+        <OfflineIndicator lang={lang} />
+        <PersistentAudioBar />
+      </>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F3EA] text-[#1A2421]">
+    <div className="min-h-screen flex flex-col bg-[#F7F3EA] text-[#172320]">
+      {/* Thin Top German Tricolor Hairline */}
+      <div className="h-[3px] w-full flex shrink-0" aria-hidden="true">
+        <div className="flex-1 bg-[#111111]" />
+        <div className="flex-1 bg-[#DD0000]" />
+        <div className="flex-1 bg-[#FFCE00]" />
+      </div>
+
       {/* Top Navigation Bar */}
-      <header className="sticky top-0 z-30 bg-[#F7F3EA]/92 backdrop-blur-md border-b border-[#0E4B4B]/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Brand */}
+      <header className="sticky top-0 z-30 bg-[#F7F3EA]/94 backdrop-blur-md border-b border-[#0D4A42]/12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+          {/* Official DeutschFlow Brand */}
           <button
             type="button"
             onClick={() => navigateTo('home')}
             className="flex items-center gap-2.5 text-start cursor-pointer whitespace-nowrap shrink-0"
           >
-            <BrandCrestSvg className="w-8 h-8 sm:w-9 sm:h-9 shrink-0" />
-            <span className="text-base sm:text-lg font-editorial font-bold text-[#0E4B4B] tracking-tight">
-              DeutschFlow Ultimate
+            <BrandCrestSvg className="w-9 h-9 sm:w-10 sm:h-10 shrink-0" />
+            <span className="text-lg sm:text-xl font-editorial font-bold tracking-tight text-[#093D38]">
+              Deutsch<span className="text-[#C8962E]">Flow</span>
             </span>
           </button>
 
-          {/* Language Switch + Unified Search */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Controls: PWA Install + Language Switch + Unified Search */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            <PWAInstallButton lang={lang} variant="header" />
+
             <div
-              className="flex items-center bg-white border border-[#0E4B4B]/14 rounded-xl p-0.5 text-xs"
+              className="flex items-center bg-white border border-[#0D4A42]/15 rounded-xl p-0.5 text-xs shadow-2xs"
               role="group"
               aria-label="Interface language"
             >
@@ -120,8 +166,8 @@ const DeutschFlowWorkspace: React.FC = () => {
                   onClick={() => setLang(code)}
                   className={`px-2 sm:px-2.5 py-1 rounded-lg font-semibold uppercase cursor-pointer transition-colors ${
                     lang === code
-                      ? 'bg-[#0E4B4B] text-white'
-                      : 'text-[#52615D] hover:text-[#0E4B4B]'
+                      ? 'bg-[#093D38] text-white'
+                      : 'text-[#52615D] hover:text-[#093D38]'
                   }`}
                 >
                   {code}
@@ -132,9 +178,9 @@ const DeutschFlowWorkspace: React.FC = () => {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="px-3 sm:px-4 py-2 rounded-xl bg-[#0E4B4B] text-white hover:bg-[#093535] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+              className="px-3 sm:px-4 py-2 rounded-xl bg-[#093D38] text-white hover:bg-[#052522] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 shadow-xs"
             >
-              <Search className="w-3.5 h-3.5" />
+              <Search className="w-3.5 h-3.5 text-[#E8C35A]" />
               <span className="hidden sm:inline">{ui.unifiedSearch}</span>
             </button>
           </div>
@@ -144,34 +190,41 @@ const DeutschFlowWorkspace: React.FC = () => {
       {/* Main Content Area: Either Home Hub Grid OR Dedicated Section View */}
       <main className="flex-1">
         {activeSection === 'home' ? (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 pb-28">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-9 pb-28">
             {/* Editorial Intro Banner */}
-            <div className="bg-white rounded-3xl border border-[#0E4B4B]/12 p-6 sm:p-8 mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-2xl">
-                <p className="text-xs font-semibold tracking-wide text-[#D85A40]">
-                  Your German Media Universe
-                </p>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-editorial font-bold text-[#0E4B4B] leading-tight">
-                  {ui.tagline}
-                </h1>
-                <p className="text-sm text-[#52615D] leading-relaxed">
-                  {lang === 'ar'
-                    ? 'اختر قسماً إعلامياً للبدء: الإذاعات الحية، غرفة الأخبار والصحف، قنوات يوتيوب والوثائقيات، البودكاست، القراءة وحفظ المفردات.'
-                    : lang === 'de'
-                    ? 'Wähle einen Medienbereich: Live-Radio, Nachrichten, Zeitungen, YouTube, Dokus, Podcasts, Leseraum und deine Lernbibliothek.'
-                    : 'Choose any media universe below to listen, watch, read, and save German vocabulary in one personal hub.'}
-                </p>
+            <div className="relative overflow-hidden bg-white rounded-3xl border border-[#0D4A42]/14 shadow-sm p-6 sm:p-8 mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="flex items-start sm:items-center gap-4 sm:gap-5 max-w-2xl">
+                <img
+                  src="/brand/deutschflow-logo.png"
+                  alt="DeutschFlow"
+                  className="hidden sm:block w-16 h-16 rounded-2xl border border-[#D4AF37]/60 shadow-md object-cover shrink-0"
+                />
+                <div className="space-y-1.5">
+                  <p className="text-xs font-semibold tracking-wide text-[#C8962E]">
+                    Your German Media Universe
+                  </p>
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-editorial font-bold text-[#093D38] leading-tight">
+                    {ui.tagline}
+                  </h1>
+                  <p className="text-sm text-[#52615D] leading-relaxed">
+                    {lang === 'ar'
+                      ? 'اختر قسماً إعلامياً للبدء: الإذاعات الحية، غرفة الأخبار والصحف، German Studio والوثائقيات، البودكاست، القراءة وحفظ المفردات.'
+                      : lang === 'de'
+                      ? 'Wähle einen Medienbereich: Live-Radio, Nachrichten, Zeitungen, German Studio, Dokus, Podcasts, Leseraum und deine Lernbibliothek.'
+                      : 'Choose any media universe below to listen, watch, read, and save German vocabulary in one personal hub.'}
+                  </p>
+                </div>
               </div>
 
               {/* Quick Personal Summary */}
-              <div className="flex flex-wrap items-center gap-4 sm:gap-6 shrink-0 bg-[#FAF7F0] rounded-2xl border border-[#0E4B4B]/10 px-5 py-4">
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 shrink-0 bg-[#FAF7F0] rounded-2xl border border-[#0D4A42]/12 px-5 py-4">
                 <div>
                   <p className="text-xs text-[#52615D]">{ui.minutesExposure}</p>
-                  <p className="text-xl font-bold text-[#0E4B4B] font-mono-num">
+                  <p className="text-xl font-bold text-[#093D38] font-mono-num">
                     {Math.round(data.exposureMinutes)}
                   </p>
                 </div>
-                <div className="w-px h-8 bg-[#0E4B4B]/15" />
+                <div className="w-px h-8 bg-[#0D4A42]/15" />
                 <div>
                   <p className="text-xs text-[#52615D]">{ui.vocabSavedCount}</p>
                   <p className="text-xl font-bold text-[#D85A40] font-mono-num">
@@ -180,14 +233,14 @@ const DeutschFlowWorkspace: React.FC = () => {
                 </div>
                 {data.history[0] && (
                   <>
-                    <div className="w-px h-8 bg-[#0E4B4B]/15 hidden sm:block" />
+                    <div className="w-px h-8 bg-[#0D4A42]/15 hidden sm:block" />
                     <button
                       type="button"
                       onClick={() => navigateTo('library')}
                       className="text-start max-w-[190px] cursor-pointer hidden sm:block"
                     >
                       <p className="text-[11px] text-[#52615D]">{ui.recentTitle}</p>
-                      <p className="text-xs font-semibold text-[#0E4B4B] truncate font-german" dir="ltr">
+                      <p className="text-xs font-semibold text-[#093D38] truncate font-german" dir="ltr">
                         {data.history[0].title}
                       </p>
                     </button>
@@ -203,22 +256,22 @@ const DeutschFlowWorkspace: React.FC = () => {
                   sec.accent === 'coral'
                     ? 'group-hover:border-[#D85A40]/45'
                     : sec.accent === 'gold'
-                    ? 'group-hover:border-[#B68934]/50'
-                    : 'group-hover:border-[#0E4B4B]/45';
+                    ? 'group-hover:border-[#C8962E]/55'
+                    : 'group-hover:border-[#0D4A42]/45';
 
                 return (
                   <button
                     key={sec.id}
                     type="button"
                     onClick={() => navigateTo(sec.id)}
-                    className={`group df-card df-card-hover ${accentRing} rounded-2xl p-5 text-start flex flex-col justify-between gap-4 cursor-pointer min-h-[164px]`}
+                    className={`group df-card df-card-hover ${accentRing} rounded-2xl p-5 text-start flex flex-col justify-between gap-4 cursor-pointer min-h-[170px]`}
                   >
-                    <div className="w-14 h-14 rounded-2xl bg-[#F7F3EA] border border-[#0E4B4B]/10 flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-                      {renderSectionSvgIcon(sec.id, 'w-10 h-10')}
+                    <div className="df-icon-stage w-15 h-15 rounded-2xl flex items-center justify-center">
+                      {renderSectionSvgIcon(sec.id, 'w-11 h-11')}
                     </div>
 
                     <div>
-                      <h2 className="text-base sm:text-lg font-semibold text-[#0E4B4B] mb-1">
+                      <h2 className="text-base sm:text-lg font-semibold text-[#093D38] mb-1">
                         {getSectionTitle(sec, lang)}
                       </h2>
                       <p className="text-xs text-[#52615D] leading-relaxed line-clamp-2">
@@ -321,6 +374,7 @@ const DeutschFlowWorkspace: React.FC = () => {
         onNavigateSection={(sec) => navigateTo(sec)}
       />
 
+      <OfflineIndicator lang={lang} />
       <PersistentAudioBar />
     </div>
   );
