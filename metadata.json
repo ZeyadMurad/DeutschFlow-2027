@@ -1,0 +1,6 @@
+{
+  "name": "DeutschFlow Ultimate",
+  "description": "Your German Media Universe — Personal German radio, newsroom, YouTube channels, podcasts, documentaries, and integrated language learning hub.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

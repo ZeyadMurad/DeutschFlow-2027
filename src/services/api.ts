@@ -1,0 +1,314 @@
+import type {
+  CustomRSSSource,
+  MovieSeriesTitle,
+  NewsArticle,
+  NewsCategory,
+  NewsSourceMeta,
+  PodcastShowMeta,
+  PodcastShowWithEpisodes,
+  RadioCategory,
+  RadioStation,
+  SourceHealthStatus,
+  StreamingPlatform,
+  YouTubeCategory,
+  YouTubeChannelMeta,
+  YouTubeVideo,
+} from '../types/media';
+
+const SNAPSHOT_PREFIX = 'df_cache_snapshot_v1_';
+
+function saveSnapshot<T>(key: string, data: T): void {
+  try {
+    localStorage.setItem(
+      `${SNAPSHOT_PREFIX}${key}`,
+      JSON.stringify({ savedAt: new Date().toISOString(), data })
+    );
+  } catch {
+    // Ignore quota errors
+  }
+}
+
+function readSnapshot<T>(key: string): { savedAt: string; data: T } | null {
+  try {
+    const raw = localStorage.getItem(`${SNAPSHOT_PREFIX}${key}`);
+    if (!raw) return null;
+    return JSON.parse(raw) as { savedAt: string; data: T };
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchRadioStations(params: {
+  q?: string;
+  category?: RadioCategory;
+  state?: string;
+  offset?: number;
+  limit?: number;
+  force?: boolean;
+}): Promise<{
+  total: number;
+  poolTotal: number;
+  stations: RadioStation[];
+  states: string[];
+  health?: SourceHealthStatus;
+  fromOfflineCache?: boolean;
+}> {
+  const qs = new URLSearchParams();
+  if (params.q) qs.set('q', params.q);
+  if (params.category) qs.set('category', params.category);
+  if (params.state) qs.set('state', params.state);
+  if (params.offset !== undefined) qs.set('offset', String(params.offset));
+  if (params.limit !== undefined) qs.set('limit', String(params.limit));
+  if (params.force) qs.set('force', '1');
+
+  const cacheKey = `radio_${params.category || 'all'}_${params.offset || 0}`;
+  try {
+    const res = await fetch(`/api/radio/stations?${qs.toString()}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!params.q && !params.state) saveSnapshot(cacheKey, data);
+    return data;
+  } catch (err) {
+    const snap = readSnapshot<{
+      total: number;
+      poolTotal: number;
+      stations: RadioStation[];
+      states: string[];
+    }>(cacheKey);
+    if (snap) {
+      return { ...snap.data, fromOfflineCache: true };
+    }
+    throw err;
+  }
+}
+
+export async function fetchNewsFeed(params?: {
+  category?: NewsCategory;
+  source?: string;
+  q?: string;
+  force?: boolean;
+}): Promise<{
+  total: number;
+  articles: NewsArticle[];
+  sources: NewsSourceMeta[];
+  health: SourceHealthStatus[];
+  lastUpdated: string;
+  fromOfflineCache?: boolean;
+}> {
+  const qs = new URLSearchParams();
+  if (params?.category) qs.set('category', params.category);
+  if (params?.source) qs.set('source', params.source);
+  if (params?.q) qs.set('q', params.q);
+  if (params?.force) qs.set('force', '1');
+
+  try {
+    const res = await fetch(`/api/news?${qs.toString()}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!params?.q && !params?.source && (!params?.category || params.category === 'all')) {
+      saveSnapshot('news_all', data);
+    }
+    return data;
+  } catch (err) {
+    const snap = readSnapshot<{
+      total: number;
+      articles: NewsArticle[];
+      sources: NewsSourceMeta[];
+      health: SourceHealthStatus[];
+      lastUpdated: string;
+    }>('news_all');
+    if (snap) {
+      return { ...snap.data, fromOfflineCache: true };
+    }
+    throw err;
+  }
+}
+
+export async function fetchCustomNewsFeeds(sources: CustomRSSSource[]): Promise<NewsArticle[]> {
+  if (!sources.length) return [];
+  try {
+    const res = await fetch('/api/news/custom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sources: sources.filter((s) => s.enabled) }),
+    });
+    if (!res.ok) return [];
+    const json = (await res.json()) as { articles: NewsArticle[] };
+    return json.articles || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchYouTubeVideos(params?: {
+  category?: YouTubeCategory;
+  channelId?: string;
+  q?: string;
+  force?: boolean;
+}): Promise<{
+  total: number;
+  videos: YouTubeVideo[];
+  channels: YouTubeChannelMeta[];
+  usingYouTubeApi: boolean;
+  health: SourceHealthStatus[];
+  lastUpdated: string;
+  fromOfflineCache?: boolean;
+}> {
+  const qs = new URLSearchParams();
+  if (params?.category) qs.set('category', params.category);
+  if (params?.channelId) qs.set('channelId', params.channelId);
+  if (params?.q) qs.set('q', params.q);
+  if (params?.force) qs.set('force', '1');
+
+  try {
+    const res = await fetch(`/api/youtube?${qs.toString()}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!params?.q && !params?.channelId && (!params?.category || params.category === 'all')) {
+      saveSnapshot('youtube_all', data);
+    }
+    return data;
+  } catch (err) {
+    const snap = readSnapshot<{
+      total: number;
+      videos: YouTubeVideo[];
+      channels: YouTubeChannelMeta[];
+      usingYouTubeApi: boolean;
+      health: SourceHealthStatus[];
+      lastUpdated: string;
+    }>('youtube_all');
+    if (snap) {
+      return { ...snap.data, fromOfflineCache: true };
+    }
+    throw err;
+  }
+}
+
+export async function fetchPodcasts(params?: {
+  category?: string;
+  showId?: string;
+  force?: boolean;
+}): Promise<{
+  shows: PodcastShowWithEpisodes[];
+  catalog: PodcastShowMeta[];
+  health: SourceHealthStatus[];
+  lastUpdated: string;
+  fromOfflineCache?: boolean;
+}> {
+  const qs = new URLSearchParams();
+  if (params?.category) qs.set('category', params.category);
+  if (params?.showId) qs.set('showId', params.showId);
+  if (params?.force) qs.set('force', '1');
+
+  try {
+    const res = await fetch(`/api/podcasts?${qs.toString()}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (!params?.showId && (!params?.category || params.category === 'all')) {
+      saveSnapshot('podcasts_all', data);
+    }
+    return data;
+  } catch (err) {
+    const snap = readSnapshot<{
+      shows: PodcastShowWithEpisodes[];
+      catalog: PodcastShowMeta[];
+      health: SourceHealthStatus[];
+      lastUpdated: string;
+    }>('podcasts_all');
+    if (snap) {
+      return { ...snap.data, fromOfflineCache: true };
+    }
+    throw err;
+  }
+}
+
+export async function discoverPodcasts(q: string): Promise<
+  Array<{
+    id: string;
+    title: string;
+    publisher: string;
+    rssUrl: string;
+    websiteUrl: string;
+    coverUrl?: string;
+    genre: string;
+  }>
+> {
+  const res = await fetch(`/api/podcasts/discover?q=${encodeURIComponent(q)}`);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.results || [];
+}
+
+export async function loadPodcastEpisodes(show: PodcastShowMeta): Promise<PodcastShowWithEpisodes> {
+  const res = await fetch('/api/podcasts/episodes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ show }),
+  });
+  if (!res.ok) throw new Error('Could not load podcast feed');
+  const data = (await res.json()) as { show: PodcastShowWithEpisodes };
+  return data.show;
+}
+
+export async function fetchMoviesDirectory(): Promise<{
+  platforms: StreamingPlatform[];
+  titles: MovieSeriesTitle[];
+}> {
+  const res = await fetch('/api/movies');
+  if (!res.ok) throw new Error('Failed to load movies directory');
+  return res.json();
+}
+
+export async function fetchAllSourcesHealth(): Promise<{
+  news: NewsSourceMeta[];
+  youtube: YouTubeChannelMeta[];
+  podcasts: PodcastShowMeta[];
+  platforms: StreamingPlatform[];
+  health: SourceHealthStatus[];
+}> {
+  const res = await fetch('/api/sources');
+  if (!res.ok) throw new Error('Failed to load sources');
+  return res.json();
+}
+
+export async function validateCustomRss(
+  rssUrl: string,
+  name?: string
+): Promise<{ valid: boolean; name: string; rssUrl: string }> {
+  const res = await fetch('/api/sources/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rssUrl, name }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Validation failed');
+  return data;
+}
+
+export async function translateGermanOnDemand(
+  text: string,
+  target: 'ar' | 'en' = 'ar'
+): Promise<{ word: string; translation: string; provider: string }> {
+  const res = await fetch('/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, target }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Translation unavailable');
+  return data;
+}
+
+export async function runUnifiedSearch(q: string): Promise<{
+  radio: RadioStation[];
+  news: NewsArticle[];
+  videos: YouTubeVideo[];
+  podcasts: PodcastShowMeta[];
+  episodes: any[];
+  movies: MovieSeriesTitle[];
+  platforms: StreamingPlatform[];
+}> {
+  const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+  if (!res.ok) throw new Error('Search failed');
+  return res.json();
+}

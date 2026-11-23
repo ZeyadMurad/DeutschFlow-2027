@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --df-cream: #f7f3ea;
+  --df-cream-deep: #efe8d8;
+  --df-surface: #ffffff;
+  --df-surface-muted: #faf7f0;
+  --df-petrol: #0e4b4b;
+  --df-petrol-dark: #093535;
+  --df-petrol-soft: rgba(14, 75, 75, 0.08);
+  --df-coral: #d85a40;
+  --df-coral-soft: rgba(216, 90, 64, 0.11);
+  --df-gold: #b68934;
+  --df-gold-soft: rgba(182, 137, 52, 0.13);
+  --df-ink: #1a2421;
+  --df-ink-muted: #52615d;
+  --df-border: rgba(14, 75, 75, 0.11);
+}
+
+html {
+  background-color: var(--df-cream);
+  color: var(--df-ink);
+  font-family: "IBM Plex Sans Arabic", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--df-cream);
+  color: var(--df-ink);
+  overflow-x: clip;
+}
+
+.font-editorial {
+  font-family: "Fraunces", "IBM Plex Sans Arabic", Georgia, serif;
+}
+
+.font-german {
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+}
+
+.font-mono-num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Smooth focus visibility */
+:focus-visible {
+  outline: 2px solid var(--df-petrol);
+  outline-offset: 2px;
+}
+
+/* Editorial hairline card */
+.df-card {
+  background-color: var(--df-surface);
+  border: 1px solid var(--df-border);
+  box-shadow: 0 2px 12px rgba(14, 75, 75, 0.04);
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.df-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(14, 75, 75, 0.08);
+  border-color: rgba(14, 75, 75, 0.24);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .df-card,
+  .df-card-hover:hover {
+    transition: none;
+    transform: none;
+  }
+}
