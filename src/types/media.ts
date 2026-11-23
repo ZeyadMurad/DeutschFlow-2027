@@ -1,5 +1,7 @@
 export type UILanguage = 'ar' | 'de' | 'en';
 
+export type UITheme = 'dark' | 'light';
+
 export type AppSectionId =
   | 'home'
   | 'radio'
@@ -15,7 +17,8 @@ export type AppSectionId =
   | 'science'
   | 'kids'
   | 'favorites'
-  | 'library';
+  | 'library'
+  | 'settings';
 
 export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 

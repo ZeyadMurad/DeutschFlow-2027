@@ -117,7 +117,7 @@ export const TopicHubSection: React.FC<TopicHubSectionProps> = ({
       {/* Radio for this topic */}
       {radios.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-[#0E4B4B] mb-3">
+          <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-3">
             إذاعات ألمانية متخصصة ({radios.length})
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -129,10 +129,10 @@ export const TopicHubSection: React.FC<TopicHubSectionProps> = ({
                 className="df-card df-card-hover rounded-xl p-3.5 flex items-center justify-between gap-3 text-start cursor-pointer"
               >
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-[#1A2421] truncate font-german" dir="ltr">
+                  <p className="text-xs font-semibold text-[#1A2421] dark:text-[#F4EFE3] truncate font-german" dir="ltr">
                     {st.name}
                   </p>
-                  <p className="text-[11px] text-[#52615D] truncate">{st.state || 'Deutschland'}</p>
+                  <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] truncate">{st.state || 'Deutschland'}</p>
                 </div>
                 <span className="w-8 h-8 rounded-full bg-[#0E4B4B] text-white flex items-center justify-center shrink-0">
                   <Radio className="w-4 h-4" />
@@ -146,7 +146,7 @@ export const TopicHubSection: React.FC<TopicHubSectionProps> = ({
       {/* Videos for this topic */}
       {videos.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-[#0E4B4B] mb-3">
+          <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-3">
             مقاطع مرئية ووثائقيات مختارة
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -187,7 +187,7 @@ export const TopicHubSection: React.FC<TopicHubSectionProps> = ({
                         videos.filter((x) => x.channelId === v.channelId)
                       )
                     }
-                    className="text-sm font-semibold text-[#1A2421] line-clamp-2 cursor-pointer font-german"
+                    className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] line-clamp-2 cursor-pointer font-german"
                     dir="ltr"
                   >
                     {v.title}
@@ -202,7 +202,7 @@ export const TopicHubSection: React.FC<TopicHubSectionProps> = ({
       {/* Podcasts */}
       {podcasts.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-base font-semibold text-[#0E4B4B] mb-3">برامج بودكاست</h2>
+          <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-3">برامج بودكاست</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {podcasts.map((show) => (
               <div key={show.id} className="df-card rounded-2xl p-4 space-y-2.5">
@@ -216,16 +216,16 @@ export const TopicHubSection: React.FC<TopicHubSectionProps> = ({
                     />
                   )}
                   <div>
-                    <h3 className="text-sm font-semibold text-[#1A2421] font-german" dir="ltr">
+                    <h3 className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] font-german" dir="ltr">
                       {show.title}
                     </h3>
-                    <p className="text-xs text-[#52615D]">{show.publisher}</p>
+                    <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">{show.publisher}</p>
                   </div>
                 </div>
                 {show.episodes.slice(0, 2).map((ep) => (
                   <div
                     key={ep.id}
-                    className="p-2.5 rounded-xl bg-[#FAF7F0] flex items-center justify-between gap-2"
+                    className="p-2.5 rounded-xl bg-[#FAF7F0] dark:bg-[#05231F] flex items-center justify-between gap-2"
                   >
                     <span className="text-xs font-german line-clamp-1" dir="ltr">
                       {ep.title}
@@ -250,20 +250,20 @@ export const TopicHubSection: React.FC<TopicHubSectionProps> = ({
       {/* Articles */}
       {articles.length > 0 && (
         <div>
-          <h2 className="text-base font-semibold text-[#0E4B4B] mb-3">مقالات وتقارير</h2>
+          <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-3">مقالات وتقارير</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {articles.slice(0, 12).map((art) => (
               <article key={art.id} className="df-card rounded-2xl p-4 flex flex-col justify-between gap-3">
                 <div>
-                  <p className="text-xs text-[#0E4B4B] font-semibold mb-1">{art.sourceName}</p>
+                  <p className="text-xs text-[#0E4B4B] dark:text-[#7FF9EB] font-semibold mb-1">{art.sourceName}</p>
                   <h3
                     onClick={() => onOpenArticle(art)}
-                    className="text-sm font-semibold text-[#1A2421] cursor-pointer hover:text-[#0E4B4B] font-german"
+                    className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] cursor-pointer hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB] font-german"
                     dir="ltr"
                   >
                     {art.title}
                   </h3>
-                  <p className="text-xs text-[#52615D] line-clamp-2 mt-1 font-german" dir="ltr">
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] line-clamp-2 mt-1 font-german" dir="ltr">
                     {art.excerpt}
                   </p>
                 </div>

@@ -132,7 +132,7 @@ function renderHighlightedSentence(sentence: string, word: string): React.ReactN
   if (parts.length === 1) return sentence;
   return parts.map((part, i) =>
     part.toLowerCase() === cleanWord.toLowerCase() ? (
-      <mark key={i} className="bg-[#B68934]/25 text-[#0E4B4B] font-semibold px-1 rounded">
+      <mark key={i} className="bg-[#B68934]/25 text-[#0E4B4B] dark:text-[#7FF9EB] font-semibold px-1 rounded">
         {part}
       </mark>
     ) : (
@@ -277,13 +277,13 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
 
   if (data.vocabulary.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-8 sm:p-10 text-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-[#F7F3EA] border border-[#0E4B4B]/12 flex items-center justify-center mx-auto text-[#0E4B4B]">
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-8 sm:p-10 text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 flex items-center justify-center mx-auto text-[#0E4B4B] dark:text-[#7FF9EB]">
           <Layers className="w-7 h-7" />
         </div>
         <div className="max-w-md mx-auto space-y-1.5">
-          <h2 className="text-lg font-semibold text-[#0E4B4B]">{t.emptyTitle}</h2>
-          <p className="text-sm text-[#52615D] leading-relaxed">{t.emptyDesc}</p>
+          <h2 className="text-lg font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">{t.emptyTitle}</h2>
+          <p className="text-sm text-[#52615D] dark:text-[#9EC5BE] leading-relaxed">{t.emptyDesc}</p>
         </div>
         <button
           type="button"
@@ -301,7 +301,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
   return (
     <div className="space-y-5">
       {/* Toolbar */}
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
@@ -309,7 +309,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer ${
               mode === 'all'
                 ? 'bg-[#0E4B4B] text-white'
-                : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#1A2421] dark:text-[#F4EFE3] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]'
             }`}
           >
             {t.allCards} (<span className="font-mono-num">{data.vocabulary.length}</span>)
@@ -322,7 +322,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer disabled:opacity-45 ${
               mode === 'review'
                 ? 'bg-[#D85A40] text-white'
-                : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#1A2421] dark:text-[#F4EFE3] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]'
             }`}
           >
             {t.reviewOnly} (<span className="font-mono-num">{reviewIds.length}</span>)
@@ -330,10 +330,10 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
         </div>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[#0E4B4B] font-medium font-mono-num">
+          <span className="text-[#0E4B4B] dark:text-[#7FF9EB] font-medium font-mono-num">
             {t.masteredCount}: {knownIds.length}
           </span>
-          <span aria-hidden="true" className="text-[#52615D]">·</span>
+          <span aria-hidden="true" className="text-[#52615D] dark:text-[#9EC5BE]">·</span>
           <span className="text-[#D85A40] font-medium font-mono-num">
             {t.reviewCount}: {reviewIds.length}
           </span>
@@ -341,7 +341,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
           <button
             type="button"
             onClick={handleShuffle}
-            className="ms-2 px-3 py-1.5 rounded-lg bg-[#F7F3EA] text-[#0E4B4B] hover:bg-[#EFE8D8] font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="ms-2 px-3 py-1.5 rounded-lg bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] font-medium inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Shuffle className="w-3.5 h-3.5" />
             <span>{t.shuffle}</span>
@@ -350,7 +350,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
           <button
             type="button"
             onClick={() => handleRestart(mode)}
-            className="px-3 py-1.5 rounded-lg bg-[#F7F3EA] text-[#0E4B4B] hover:bg-[#EFE8D8] font-medium inline-flex items-center gap-1.5 cursor-pointer"
+            className="px-3 py-1.5 rounded-lg bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] font-medium inline-flex items-center gap-1.5 cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>{t.restart}</span>
@@ -360,13 +360,13 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
 
       {/* Round Complete State */}
       {roundFinished ? (
-        <div className="bg-white rounded-2xl border border-[#0E4B4B]/15 p-8 sm:p-10 text-center space-y-4">
-          <CheckCircle2 className="w-11 h-11 text-[#0E4B4B] mx-auto" />
+        <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 p-8 sm:p-10 text-center space-y-4">
+          <CheckCircle2 className="w-11 h-11 text-[#0E4B4B] dark:text-[#7FF9EB] mx-auto" />
           <div className="space-y-1.5 max-w-md mx-auto">
-            <h3 className="text-xl font-editorial font-semibold text-[#0E4B4B]">
+            <h3 className="text-xl font-editorial font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">
               {t.roundCompleteTitle}
             </h3>
-            <p className="text-sm text-[#52615D]">{t.roundCompleteDesc}</p>
+            <p className="text-sm text-[#52615D] dark:text-[#9EC5BE]">{t.roundCompleteDesc}</p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             {reviewIds.length > 0 && (
@@ -390,13 +390,13 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
       ) : currentCard ? (
         <div className="max-w-2xl mx-auto space-y-4">
           {/* Progress indicator */}
-          <div className="flex items-center gap-3 text-xs text-[#52615D]">
-            <span className="font-mono-num font-semibold text-[#0E4B4B]">
+          <div className="flex items-center gap-3 text-xs text-[#52615D] dark:text-[#9EC5BE]">
+            <span className="font-mono-num font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">
               {currentIndex + 1} / {deck.length}
             </span>
-            <div className="flex-1 h-1.5 rounded-full bg-[#EFE8D8] overflow-hidden">
+            <div className="flex-1 h-1.5 rounded-full bg-[#EFE8D8] dark:bg-[#041B18] overflow-hidden">
               <div
-                className="h-full bg-[#0E4B4B] transition-all duration-200"
+                className="h-full bg-[#0E4B4B] dark:bg-[#E8C35A] transition-all duration-200"
                 style={{ width: `${progressPct}%` }}
               />
             </div>
@@ -414,17 +414,17 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
               }
             }}
             aria-label={isFlipped ? t.tapBack : t.tapToFlip}
-            className="df-card rounded-3xl p-6 sm:p-10 min-h-[290px] flex flex-col justify-between cursor-pointer select-none border-[#0E4B4B]/18 hover:border-[#0E4B4B]/40"
+            className="df-card rounded-3xl p-6 sm:p-10 min-h-[290px] flex flex-col justify-between cursor-pointer select-none border-[#0E4B4B]/18 dark:border-[#3EF2DF]/24 hover:border-[#0E4B4B]/40"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-[#52615D]">
+              <span className="text-xs font-medium text-[#52615D] dark:text-[#9EC5BE]">
                 {isFlipped ? t.translationLabel : 'Deutsch'}
               </span>
 
               <button
                 type="button"
                 onClick={(e) => handleSpeakWord(e, currentCard.word)}
-                className="px-3 py-1.5 rounded-xl bg-[#F7F3EA] text-[#0E4B4B] hover:bg-[#EFE8D8] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] text-xs font-medium inline-flex items-center gap-1.5 cursor-pointer"
                 title={t.listenDe}
               >
                 <Volume2 className="w-3.5 h-3.5" />
@@ -436,7 +436,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
               /* FRONT: German word */
               <div className="my-auto py-8 text-center space-y-3">
                 <p
-                  className="text-3xl sm:text-4xl font-editorial font-bold text-[#0E4B4B] font-german break-words"
+                  className="text-3xl sm:text-4xl font-editorial font-bold text-[#0E4B4B] dark:text-[#7FF9EB] font-german break-words"
                   dir="ltr"
                   lang="de"
                 >
@@ -448,7 +448,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
               <div className="my-auto py-4 space-y-4 text-center">
                 <div>
                   <p
-                    className="text-sm font-semibold text-[#52615D] font-german mb-1"
+                    className="text-sm font-semibold text-[#52615D] dark:text-[#9EC5BE] font-german mb-1"
                     dir="ltr"
                     lang="de"
                   >
@@ -457,7 +457,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
                     {currentCard.plural ? ` (${currentCard.plural})` : ''}
                   </p>
                   {currentCard.partOfSpeech && (
-                    <p className="text-[11px] text-[#52615D] mb-1">{currentCard.partOfSpeech}</p>
+                    <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] mb-1">{currentCard.partOfSpeech}</p>
                   )}
                   <p className="text-2xl sm:text-3xl font-bold text-[#D85A40]">
                     {currentCard.translation}
@@ -465,10 +465,10 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
                 </div>
 
                 {currentCard.sentence && (
-                  <div className="bg-[#FAF7F0] border border-[#0E4B4B]/10 rounded-2xl p-4 text-start space-y-1">
-                    <p className="text-[11px] font-semibold text-[#52615D]">{t.contextLabel}</p>
+                  <div className="bg-[#FAF7F0] dark:bg-[#05231F] border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 rounded-2xl p-4 text-start space-y-1">
+                    <p className="text-[11px] font-semibold text-[#52615D] dark:text-[#9EC5BE]">{t.contextLabel}</p>
                     <p
-                      className="text-sm sm:text-base text-[#1A2421] leading-relaxed font-german"
+                      className="text-sm sm:text-base text-[#1A2421] dark:text-[#F4EFE3] leading-relaxed font-german"
                       dir="ltr"
                       lang="de"
                     >
@@ -478,10 +478,10 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
                 )}
 
                 {(currentCard.note || currentCard.sourceTitle) && (
-                  <div className="text-xs text-[#52615D] flex flex-wrap items-center justify-center gap-2 pt-1">
+                  <div className="text-xs text-[#52615D] dark:text-[#9EC5BE] flex flex-wrap items-center justify-center gap-2 pt-1">
                     {currentCard.note && (
                       <span>
-                        {t.noteLabel}: <strong className="text-[#1A2421]">{currentCard.note}</strong>
+                        {t.noteLabel}: <strong className="text-[#1A2421] dark:text-[#F4EFE3]">{currentCard.note}</strong>
                       </span>
                     )}
                     {currentCard.note && currentCard.sourceTitle && <span aria-hidden="true">·</span>}
@@ -494,7 +494,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
                             target="_blank"
                             rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            className="text-[#0E4B4B] hover:underline inline-flex items-center"
+                            className="text-[#0E4B4B] dark:text-[#7FF9EB] hover:underline inline-flex items-center"
                           >
                             <ExternalLink className="w-3 h-3" />
                           </a>
@@ -506,7 +506,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
               </div>
             )}
 
-            <p className="text-[11px] text-[#52615D] text-center">
+            <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] text-center">
               {isFlipped ? t.tapBack : t.tapToFlip}
             </p>
           </div>
@@ -517,7 +517,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
               <button
                 type="button"
                 onClick={handlePrev}
-                className="px-3.5 py-2.5 rounded-xl bg-white border border-[#0E4B4B]/15 text-[#0E4B4B] hover:bg-[#F7F3EA] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#F7F3EA] dark:hover:bg-[#0B3C35] dark:bg-[#041B18] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 {isRtl ? <ArrowRight className="w-3.5 h-3.5" /> : <ArrowLeft className="w-3.5 h-3.5" />}
                 <span>{t.prev}</span>
@@ -526,7 +526,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
               <button
                 type="button"
                 onClick={handleFlip}
-                className="px-4 py-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-[#0E4B4B] hover:bg-[#EFE8D8] text-xs font-semibold cursor-pointer"
+                className="px-4 py-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] text-xs font-semibold cursor-pointer"
               >
                 {t.flip}
               </button>
@@ -534,7 +534,7 @@ export const FlashcardEngine: React.FC<FlashcardEngineProps> = ({ lang, onGoToVo
               <button
                 type="button"
                 onClick={handleNext}
-                className="px-3.5 py-2.5 rounded-xl bg-white border border-[#0E4B4B]/15 text-[#0E4B4B] hover:bg-[#F7F3EA] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#F7F3EA] dark:hover:bg-[#0B3C35] dark:bg-[#041B18] text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer"
               >
                 <span>{t.next}</span>
                 {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}

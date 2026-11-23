@@ -45,7 +45,7 @@ export const FavoritesSection: React.FC<FavoritesSectionProps> = ({
 
   return (
     <SectionShell sectionId="favorites" lang={lang} onBack={onBack}>
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 mb-6">
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-4 mb-6">
         <div className="flex flex-wrap gap-1.5">
           {tabs.map((t) => (
             <button
@@ -55,7 +55,7 @@ export const FavoritesSection: React.FC<FavoritesSectionProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
                 tab === t.id
                   ? 'bg-[#0E4B4B] text-white'
-                  : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                  : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#1A2421] dark:text-[#F4EFE3] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]'
               }`}
             >
               {t.label} (<span className="font-mono-num">{t.count}</span>)
@@ -73,10 +73,10 @@ export const FavoritesSection: React.FC<FavoritesSectionProps> = ({
             data.favorites.radio.map((st) => (
               <div key={st.id} className="df-card rounded-2xl p-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-[#1A2421] truncate font-german" dir="ltr">
+                  <h3 className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] truncate font-german" dir="ltr">
                     {st.name}
                   </h3>
-                  <p className="text-xs text-[#52615D]">{st.state || 'Deutschland'}</p>
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">{st.state || 'Deutschland'}</p>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
@@ -109,10 +109,10 @@ export const FavoritesSection: React.FC<FavoritesSectionProps> = ({
             data.favorites[tab].map((art) => (
               <div key={art.id} className="df-card rounded-2xl p-4 flex flex-col justify-between gap-3">
                 <div>
-                  <p className="text-xs text-[#0E4B4B] font-semibold">{art.sourceName}</p>
+                  <p className="text-xs text-[#0E4B4B] dark:text-[#7FF9EB] font-semibold">{art.sourceName}</p>
                   <h3
                     onClick={() => onOpenArticle(art)}
-                    className="text-sm font-semibold text-[#1A2421] mt-1 cursor-pointer font-german"
+                    className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] mt-1 cursor-pointer font-german"
                     dir="ltr"
                   >
                     {art.title}
@@ -191,8 +191,8 @@ export const FavoritesSection: React.FC<FavoritesSectionProps> = ({
             data.favorites[tab].map((ep) => (
               <div key={ep.id} className="df-card rounded-2xl p-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs text-[#52615D]">{ep.showTitle}</p>
-                  <h3 className="text-sm font-semibold text-[#1A2421] truncate font-german" dir="ltr">
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">{ep.showTitle}</p>
+                  <h3 className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] truncate font-german" dir="ltr">
                     {ep.title}
                   </h3>
                 </div>
@@ -233,7 +233,7 @@ export const FavoritesSection: React.FC<FavoritesSectionProps> = ({
                   <h3 className="text-sm font-semibold font-german" dir="ltr">
                     {m.title}
                   </h3>
-                  <p className="text-xs text-[#52615D]">{m.platformName}</p>
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">{m.platformName}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <a
@@ -263,7 +263,7 @@ export const FavoritesSection: React.FC<FavoritesSectionProps> = ({
 };
 
 const EmptyBox: React.FC<{ text: string }> = ({ text }) => (
-  <div className="col-span-full bg-white rounded-2xl border border-[#0E4B4B]/12 p-8 text-center text-sm text-[#52615D]">
+  <div className="col-span-full bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-8 text-center text-sm text-[#52615D] dark:text-[#9EC5BE]">
     {text}
   </div>
 );

@@ -1,7 +1,9 @@
 import type { AppSectionId, UILanguage } from '../types/media';
 
+export type CoreSectionId = Exclude<AppSectionId, 'home' | 'settings'>;
+
 export interface SectionDefinition {
-  id: Exclude<AppSectionId, 'home'>;
+  id: CoreSectionId;
   titleAr: string;
   titleDe: string;
   titleEn: string;
@@ -10,6 +12,23 @@ export interface SectionDefinition {
   subtitleEn: string;
   accent: 'petrol' | 'coral' | 'gold';
 }
+
+export const HOME_SECTION_ORDER: CoreSectionId[] = [
+  'newspapers',
+  'news',
+  'radio',
+  'youtube',
+  'movies',
+  'podcasts',
+  'reading',
+  'learning',
+  'documentaries',
+  'culture',
+  'science',
+  'kids',
+  'favorites',
+  'library',
+];
 
 export const MAIN_SECTIONS: SectionDefinition[] = [
   {
@@ -147,9 +166,9 @@ export const MAIN_SECTIONS: SectionDefinition[] = [
     titleAr: 'مكتبتي التعليمية',
     titleDe: 'Meine Lernbibliothek',
     titleEn: 'My Learning Library',
-    subtitleAr: 'بنك المفردات، الجمل، السجل، وقت التعرض، وإدارة المصادر',
-    subtitleDe: 'Wortschatz, Sätze, Lernzeit, Quellen & Backup',
-    subtitleEn: 'Vocabulary bank, notes, exposure stats & sources',
+    subtitleAr: 'بنك المفردات، الجمل، بطاقات المراجعة، السجل، والنسخ الاحتياطي',
+    subtitleDe: 'Wortschatz, Sätze, Lernkarten, Verlauf & Backup',
+    subtitleEn: 'Vocabulary bank, flashcards, history & local backup',
     accent: 'petrol',
   },
 ];

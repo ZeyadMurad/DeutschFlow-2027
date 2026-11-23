@@ -489,6 +489,26 @@ export const LibrarySvgIcon: React.FC<IconProps> = ({ className = 'w-11 h-11' })
   </svg>
 );
 
+export const SettingsSvgIcon: React.FC<IconProps> = ({ className = 'w-11 h-11' }) => (
+  <svg viewBox="0 0 64 64" fill="none" className={className} aria-hidden="true">
+    <defs>
+      <linearGradient id="df-set-gold" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FFF0B8" />
+        <stop offset="50%" stopColor="#D4AF37" />
+        <stop offset="100%" stopColor="#8E6514" />
+      </linearGradient>
+      <radialGradient id="df-set-core" cx="40%" cy="35%" r="65%">
+        <stop offset="0%" stopColor="#72F7E7" />
+        <stop offset="55%" stopColor="#127A6E" />
+        <stop offset="100%" stopColor="#062B27" />
+      </radialGradient>
+    </defs>
+    <circle cx="32" cy="32" r="22" stroke="url(#df-set-gold)" strokeWidth="5" strokeDasharray="7 5.5" strokeLinecap="round" />
+    <circle cx="32" cy="32" r="15" fill="url(#df-set-core)" stroke="url(#df-set-gold)" strokeWidth="2.2" />
+    <circle cx="32" cy="32" r="6" fill="#052522" stroke="#FFE99E" strokeWidth="1.8" />
+  </svg>
+);
+
 export const BrandCrestSvg: React.FC<IconProps> = ({ className = 'w-9 h-9' }) => (
   <img
     src="/brand/deutschflow-logo.png"
@@ -527,5 +547,7 @@ export function renderSectionSvgIcon(id: Exclude<AppSectionId, 'home'>, classNam
       return <FavoritesSvgIcon className={className} />;
     case 'library':
       return <LibrarySvgIcon className={className} />;
+    case 'settings':
+      return <SettingsSvgIcon className={className} />;
   }
 }

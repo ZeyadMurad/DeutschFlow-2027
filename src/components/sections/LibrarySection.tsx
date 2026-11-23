@@ -1,62 +1,43 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Check,
-  Download,
-  ExternalLink,
-  Loader2,
-  Plus,
-  Trash2,
-  Upload,
-} from 'lucide-react';
-import { fetchAllSourcesHealth, validateCustomRss } from '../../services/api';
-import type { NewsCategory, SourceHealthStatus, UILanguage } from '../../types/media';
+import { Download, ExternalLink, Plus, Trash2, Upload } from 'lucide-react';
+import type { UILanguage } from '../../types/media';
 import { useUserData } from '../../context/UserDataContext';
 import { FlashcardEngine } from './FlashcardEngine';
 import { SectionShell } from './SectionShell';
 
+export type LibraryTab = 'vocab' | 'flashcards' | 'history' | 'backup';
+
 interface LibrarySectionProps {
   lang: UILanguage;
   onBack: () => void;
+  initialTab?: LibraryTab;
 }
 
-type LibTab = 'vocab' | 'flashcards' | 'history' | 'sources' | 'backup';
-
-export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) => {
+export const LibrarySection: React.FC<LibrarySectionProps> = ({
+  lang,
+  onBack,
+  initialTab = 'vocab',
+}) => {
   const {
     data,
     addVocab,
     updateVocabNote,
     removeVocab,
-    toggleSourceEnabled,
-    addCustomSource,
-    removeCustomSource,
     exportBackup,
     importBackup,
   } = useUserData();
 
-  const [tab, setTab] = useState<LibTab>('vocab');
+  const [tab, setTab] = useState<LibraryTab>(initialTab);
   const [vocabSearch, setVocabSearch] = useState('');
   const [newWord, setNewWord] = useState('');
   const [newTrans, setNewTrans] = useState('');
   const [newSentence, setNewSentence] = useState('');
   const [newNote, setNewNote] = useState('');
-
-  const [sourceHealth, setSourceHealth] = useState<SourceHealthStatus[]>([]);
-  const [customName, setCustomName] = useState('');
-  const [customRss, setCustomRss] = useState('');
-  const [customSite, setCustomSite] = useState('');
-  const [customCat, setCustomCat] = useState<NewsCategory>('politics');
-  const [validatingRss, setValidatingRss] = useState(false);
-  const [rssError, setRssError] = useState('');
-  const [rssSuccess, setRssSuccess] = useState('');
-
   const [importStatus, setImportStatus] = useState('');
 
   useEffect(() => {
-    if (tab === 'sources') {
-      void fetchAllSourcesHealth().then((res) => setSourceHealth(res.health));
-    }
-  }, [tab]);
+    setTab(initialTab);
+  }, [initialTab]);
 
   const filteredVocab = data.vocabulary.filter((v) => {
     if (!vocabSearch.trim()) return true;
@@ -73,37 +54,13 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
       word: newWord,
       translation: newTrans || '—',
       sentence: newSentence,
-      sourceTitle: 'إضافة شخصية',
+      sourceTitle: lang === 'de' ? 'Eigener Eintrag' : lang === 'en' ? 'Personal Entry' : 'إضافة شخصية',
       note: newNote,
     });
     setNewWord('');
     setNewTrans('');
     setNewSentence('');
     setNewNote('');
-  };
-
-  const handleAddCustomRss = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setRssError('');
-    setRssSuccess('');
-    setValidatingRss(true);
-    try {
-      const check = await validateCustomRss(customRss, customName);
-      addCustomSource({
-        name: check.name,
-        rssUrl: check.rssUrl,
-        websiteUrl: customSite.trim() || check.rssUrl,
-        category: customCat,
-      });
-      setCustomName('');
-      setCustomRss('');
-      setCustomSite('');
-      setRssSuccess('تم التحقق من الخلاصة وإضافتها إلى مصادر الأخبار بنجاح.');
-    } catch (err) {
-      setRssError(err instanceof Error ? err.message : 'تعذّر التحقق من رابط RSS');
-    } finally {
-      setValidatingRss(false);
-    }
   };
 
   const handleExportJson = () => {
@@ -123,37 +80,62 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
     try {
       const text = await file.text();
       importBackup(text);
-      setImportStatus('تم استيراد النسخة الاحتياطية بنجاح واستعادة بياناتك.');
+      setImportStatus(
+        lang === 'de'
+          ? 'Backup erfolgreich importiert und Daten wiederhergestellt.'
+          : lang === 'en'
+          ? 'Backup imported and personal data restored.'
+          : 'تم استيراد النسخة الاحتياطية بنجاح واستعادة بياناتك.'
+      );
     } catch (err) {
       setImportStatus(err instanceof Error ? err.message : 'ملف JSON غير صالح');
     }
   };
+
+  const tabs: Array<{ id: LibraryTab; label: string }> = [
+    {
+      id: 'vocab',
+      label: lang === 'de' ? 'Meine Vokabeln' : lang === 'en' ? 'My Vocabulary' : 'مفرداتي وجُملي',
+    },
+    {
+      id: 'flashcards',
+      label: lang === 'de' ? 'Lernkarten' : lang === 'en' ? 'Flashcards' : 'بطاقات المراجعة',
+    },
+    {
+      id: 'history',
+      label: lang === 'de' ? 'Lernverlauf' : lang === 'en' ? 'Activity History' : 'سجل التعلّم والنشاط',
+    },
+    {
+      id: 'backup',
+      label: lang === 'de' ? 'Backup (JSON)' : lang === 'en' ? 'Backup (JSON)' : 'نسخ احتياطي (JSON)',
+    },
+  ];
 
   return (
     <SectionShell sectionId="library" lang={lang} onBack={onBack}>
       {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="df-card rounded-2xl p-4">
-          <p className="text-xs text-[#52615D]">وقت التعرض للألمانية</p>
-          <p className="text-2xl font-bold text-[#0E4B4B] font-mono-num mt-1">
+          <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">وقت التعرض للألمانية</p>
+          <p className="text-2xl font-bold text-[#0E4B4B] dark:text-[#7FF9EB] font-mono-num mt-1">
             {Math.round(data.exposureMinutes)} <span className="text-xs font-normal">دقيقة</span>
           </p>
         </div>
         <div className="df-card rounded-2xl p-4">
-          <p className="text-xs text-[#52615D]">المفردات المحفوظة</p>
-          <p className="text-2xl font-bold text-[#D85A40] font-mono-num mt-1">
+          <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">المفردات المحفوظة</p>
+          <p className="text-2xl font-bold text-[#D85A40] dark:text-[#FF8D75] font-mono-num mt-1">
             {data.vocabulary.length}
           </p>
         </div>
         <div className="df-card rounded-2xl p-4">
-          <p className="text-xs text-[#52615D]">سجل الاستماع والمشاهدة</p>
-          <p className="text-2xl font-bold text-[#B68934] font-mono-num mt-1">
+          <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">سجل الاستماع والمشاهدة</p>
+          <p className="text-2xl font-bold text-[#B68934] dark:text-[#E8C35A] font-mono-num mt-1">
             {data.history.length}
           </p>
         </div>
         <div className="df-card rounded-2xl p-4">
-          <p className="text-xs text-[#52615D]">العناصر المفضلة</p>
-          <p className="text-2xl font-bold text-[#0E4B4B] font-mono-num mt-1">
+          <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">العناصر المفضلة</p>
+          <p className="text-2xl font-bold text-[#0E4B4B] dark:text-[#7FF9EB] font-mono-num mt-1">
             {data.favorites.radio.length +
               data.favorites.articles.length +
               data.favorites.videos.length +
@@ -162,31 +144,17 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-3 mb-6 flex flex-wrap gap-1.5">
-        {[
-          { id: 'vocab', label: 'مفرداتي وجُملي' },
-          {
-            id: 'flashcards',
-            label:
-              lang === 'de'
-                ? 'Lernkarten'
-                : lang === 'en'
-                ? 'Flashcards'
-                : 'بطاقات المراجعة',
-          },
-          { id: 'history', label: 'سجل التعلّم والنشاط' },
-          { id: 'sources', label: 'إدارة المصادر وحالتها' },
-          { id: 'backup', label: 'نسخ احتياطي (JSON)' },
-        ].map((t) => (
+      {/* Tabs (Source Management cleanly removed per specification) */}
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-3 mb-6 flex flex-wrap gap-1.5">
+        {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
-            onClick={() => setTab(t.id as LibTab)}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
+            onClick={() => setTab(t.id)}
+            className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer transition-colors ${
               tab === t.id
-                ? 'bg-[#0E4B4B] text-white'
-                : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                ? 'bg-[#0E4B4B] text-white dark:bg-[#E8C35A] dark:text-[#041B18]'
+                : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8] dark:bg-[#041B18]/75 dark:text-[#D5EAE5] dark:hover:bg-[#0B3C35]'
             }`}
           >
             {t.label}
@@ -199,9 +167,11 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
         <div className="space-y-6">
           <form
             onSubmit={handleAddManualVocab}
-            className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 sm:p-5 space-y-3"
+            className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-4 sm:p-5 space-y-3"
           >
-            <h2 className="text-sm font-semibold text-[#0E4B4B]">إضافة كلمة أو جملة ألمانية جديدة</h2>
+            <h2 className="text-sm font-semibold text-[#0E4B4B] dark:text-[#E8C35A]">
+              إضافة كلمة أو جملة ألمانية جديدة
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
               <input
                 type="text"
@@ -209,14 +179,14 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
                 onChange={(e) => setNewWord(e.target.value)}
                 placeholder="الكلمة بالألمانية..."
                 dir="ltr"
-                className="px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm font-german"
+                className="px-3 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/25 text-sm font-german text-[#172320] dark:text-white"
               />
               <input
                 type="text"
                 value={newTrans}
                 onChange={(e) => setNewTrans(e.target.value)}
                 placeholder="المعنى بالعربية..."
-                className="px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
+                className="px-3 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/25 text-sm text-[#172320] dark:text-white"
               />
               <input
                 type="text"
@@ -224,11 +194,11 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
                 onChange={(e) => setNewSentence(e.target.value)}
                 placeholder="الجملة التي وردت فيها..."
                 dir="ltr"
-                className="px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm font-german"
+                className="px-3 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/25 text-sm font-german text-[#172320] dark:text-white"
               />
               <button
                 type="submit"
-                className="px-4 py-2 rounded-xl bg-[#D85A40] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#D85A40] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer hover:brightness-105"
               >
                 <Plus className="w-4 h-4" />
                 <span>إضافة للمفردات</span>
@@ -241,11 +211,11 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
             value={vocabSearch}
             onChange={(e) => setVocabSearch(e.target.value)}
             placeholder="ابحث في مفرداتك المحفوظة..."
-            className="w-full px-4 py-2.5 rounded-xl bg-white border border-[#0E4B4B]/15 text-sm"
+            className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/25 text-sm text-[#172320] dark:text-white"
           />
 
           {filteredVocab.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-8 text-center text-sm text-[#52615D]">
+            <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-8 text-center text-sm text-[#52615D] dark:text-[#9EC5BE]">
               لا توجد مفردات محفوظة بعد. افتح أي مقال ألماني واضغط على أي كلمة لحفظها هنا!
             </div>
           ) : (
@@ -255,15 +225,15 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-0.5">
                       <div>
-                        <span className="text-base font-bold text-[#0E4B4B] font-german" dir="ltr">
+                        <span className="text-base font-bold text-[#0E4B4B] dark:text-[#7FF9EB] font-german" dir="ltr">
                           {v.article ? `${v.article} ` : ''}
                           {v.word}
                         </span>
-                        <span className="mx-2 text-[#52615D]">—</span>
-                        <span className="text-sm font-semibold text-[#D85A40]">{v.translation}</span>
+                        <span className="mx-2 text-[#52615D] dark:text-[#9EC5BE]">—</span>
+                        <span className="text-sm font-semibold text-[#D85A40] dark:text-[#FF957E]">{v.translation}</span>
                       </div>
                       {(v.lemma || v.partOfSpeech || v.plural) && (
-                        <p className="text-[11px] text-[#52615D] flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                        <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] flex flex-wrap items-center gap-x-3 gap-y-0.5">
                           {v.partOfSpeech && <span>{v.partOfSpeech}</span>}
                           {v.lemma && (
                             <span className="font-german" dir="ltr">
@@ -281,24 +251,24 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
                     <button
                       type="button"
                       onClick={() => removeVocab(v.id)}
-                      className="p-1.5 rounded-lg text-[#52615D] hover:text-[#D85A40] cursor-pointer"
+                      className="p-1.5 rounded-lg text-[#52615D] dark:text-[#9EC5BE] hover:text-[#D85A40] cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                   {v.sentence && (
-                    <p className="text-xs text-[#1A2421] bg-[#FAF7F0] p-2.5 rounded-xl font-german" dir="ltr">
+                    <p className="text-xs text-[#1A2421] dark:text-[#E8F3F0] bg-[#FAF7F0] dark:bg-[#041B18]/80 p-2.5 rounded-xl font-german" dir="ltr">
                       {v.sentence}
                     </p>
                   )}
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#52615D]">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#52615D] dark:text-[#9EC5BE]">
                     <span>المصدر: {v.sourceTitle}</span>
                     <input
                       type="text"
                       defaultValue={v.note || ''}
                       onBlur={(e) => updateVocabNote(v.id, e.target.value)}
                       placeholder="أضف ملاحظة..."
-                      className="px-2.5 py-1 rounded-lg bg-[#F7F3EA] border border-[#0E4B4B]/10 text-xs min-w-[200px]"
+                      className="px-2.5 py-1 rounded-lg bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/22 text-xs text-[#172320] dark:text-white min-w-[200px]"
                     />
                   </div>
                 </article>
@@ -317,7 +287,7 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
       {tab === 'history' && (
         <div className="space-y-2.5">
           {data.history.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-8 text-center text-sm text-[#52615D]">
+            <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-8 text-center text-sm text-[#52615D] dark:text-[#9EC5BE]">
               سجل التعلّم فارغ حالياً — سيُسجل نشاطك هنا تلقائياً عند الاستماع أو القراءة أو المشاهدة.
             </div>
           ) : (
@@ -327,13 +297,13 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
                 className="df-card rounded-xl px-4 py-3 flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
-                  <p className="text-xs text-[#52615D]">
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">
                     {h.type} · {h.subtitle} ·{' '}
                     <span className="font-mono-num">
                       {new Date(h.timestamp).toLocaleString('de-DE')}
                     </span>
                   </p>
-                  <p className="text-sm font-medium text-[#1A2421] truncate font-german" dir="ltr">
+                  <p className="text-sm font-medium text-[#1A2421] dark:text-white truncate font-german" dir="ltr">
                     {h.title}
                   </p>
                 </div>
@@ -342,7 +312,7 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
                     href={h.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-[#F7F3EA] text-[#0E4B4B] shrink-0"
+                    className="p-2 rounded-lg bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] shrink-0"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
@@ -353,145 +323,14 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
         </div>
       )}
 
-      {/* SOURCES TAB */}
-      {tab === 'sources' && (
-        <div className="space-y-6">
-          <form
-            onSubmit={handleAddCustomRss}
-            className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 sm:p-5 space-y-3"
-          >
-            <h2 className="text-sm font-semibold text-[#0E4B4B]">
-              إضافة مصدر RSS ألماني شخصي (HTTPS)
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              <input
-                type="text"
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder="اسم المصدر..."
-                className="px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
-              />
-              <input
-                type="url"
-                required
-                value={customRss}
-                onChange={(e) => setCustomRss(e.target.value)}
-                placeholder="https://example.de/rss.xml"
-                dir="ltr"
-                className="px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
-              />
-              <select
-                value={customCat}
-                onChange={(e) => setCustomCat(e.target.value as NewsCategory)}
-                className="px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
-              >
-                <option value="politics">السياسة</option>
-                <option value="business">الاقتصاد</option>
-                <option value="science">العلوم</option>
-                <option value="tech">التكنولوجيا</option>
-                <option value="culture">الثقافة</option>
-              </select>
-              <button
-                type="submit"
-                disabled={validatingRss}
-                className="px-4 py-2 rounded-xl bg-[#0E4B4B] text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {validatingRss ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                <span>تحقق وأضف</span>
-              </button>
-            </div>
-            {rssError && <p className="text-xs text-[#D85A40]">{rssError}</p>}
-            {rssSuccess && (
-              <p className="text-xs text-[#0E4B4B] inline-flex items-center gap-1">
-                <Check className="w-3.5 h-3.5" /> {rssSuccess}
-              </p>
-            )}
-          </form>
-
-          {data.customSources.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-[#0E4B4B]">مصادرك المضافة شخصياً</h3>
-              {data.customSources.map((cs) => (
-                <div key={cs.id} className="df-card rounded-xl p-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold">{cs.name}</p>
-                    <p className="text-xs text-[#52615D]" dir="ltr">
-                      {cs.rssUrl}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeCustomSource(cs.id)}
-                    className="p-2 text-[#D85A40] cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-[#0E4B4B]">
-              حالة المصادر المتصلة ({sourceHealth.length})
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {sourceHealth.map((sh) => {
-                const disabled = data.disabledSourceIds.includes(sh.id);
-                return (
-                  <div key={sh.id} className="df-card rounded-xl p-3.5 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#1A2421] truncate font-german" dir="ltr">
-                        {sh.name}
-                      </p>
-                      <p className="text-[11px] text-[#52615D]">
-                        {sh.type} ·{' '}
-                        <span
-                          className={
-                            sh.status === 'ok'
-                              ? 'text-[#0E4B4B] font-semibold'
-                              : sh.status === 'error'
-                              ? 'text-[#D85A40] font-semibold'
-                              : 'text-[#B68934]'
-                          }
-                        >
-                          {sh.status}
-                        </span>{' '}
-                        · {sh.itemCount} عنصر
-                      </p>
-                      {sh.lastError && (
-                        <p className="text-[11px] text-[#D85A40] truncate">{sh.lastError}</p>
-                      )}
-                    </div>
-                    {sh.type === 'news' && (
-                      <button
-                        type="button"
-                        onClick={() => toggleSourceEnabled(sh.id)}
-                        className={`px-3 py-1 rounded-lg text-xs font-medium cursor-pointer shrink-0 ${
-                          disabled
-                            ? 'bg-[#D85A40]/15 text-[#D85A40]'
-                            : 'bg-[#0E4B4B]/10 text-[#0E4B4B]'
-                        }`}
-                      >
-                        {disabled ? 'معطّل' : 'مفعّل'}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* BACKUP TAB */}
       {tab === 'backup' && (
-        <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-6 space-y-5">
+        <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-6 space-y-5">
           <div>
-            <h2 className="text-base font-semibold text-[#0E4B4B] mb-1">
+            <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#E8C35A] mb-1">
               النسخ الاحتياطي المحلي بدون حسابات
             </h2>
-            <p className="text-xs text-[#52615D]">
+            <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">
               يتم حفظ جميع مفضلاتك، مفرداتك، ملاحظاتك، وسجل التعلّم محلياً في المتصفح (IndexedDB + LocalStorage). يمكنك تصدير نسخة JSON أو استيرادها في أي وقت.
             </p>
           </div>
@@ -500,13 +339,13 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
             <button
               type="button"
               onClick={handleExportJson}
-              className="px-5 py-2.5 rounded-xl bg-[#0E4B4B] text-white text-xs font-semibold inline-flex items-center gap-2 cursor-pointer hover:bg-[#093535]"
+              className="px-5 py-2.5 rounded-xl bg-[#0E4B4B] dark:bg-[#E8C35A] text-white dark:text-[#041B18] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer hover:brightness-105"
             >
               <Download className="w-4 h-4" />
               <span>تصدير نسخة احتياطية (JSON)</span>
             </button>
 
-            <label className="px-5 py-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/20 text-[#0E4B4B] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer hover:bg-[#EFE8D8]">
+            <label className="px-5 py-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/20 dark:border-[#3EF2DF]/25 text-[#0E4B4B] dark:text-[#F4EFE3] text-xs font-semibold inline-flex items-center gap-2 cursor-pointer hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]">
               <Upload className="w-4 h-4" />
               <span>استيراد نسخة (JSON)</span>
               <input
@@ -518,7 +357,9 @@ export const LibrarySection: React.FC<LibrarySectionProps> = ({ lang, onBack }) 
             </label>
           </div>
 
-          {importStatus && <p className="text-xs font-medium text-[#0E4B4B]">{importStatus}</p>}
+          {importStatus && (
+            <p className="text-xs font-medium text-[#0E4B4B] dark:text-[#7FF9EB]">{importStatus}</p>
+          )}
         </div>
       )}
     </SectionShell>

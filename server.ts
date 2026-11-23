@@ -4,6 +4,18 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { XMLParser } from 'fast-xml-parser';
+import {
+  authenticateAdminLogin,
+  bootstrapAdminOwner,
+  extractBearerToken,
+  getAdminBootStatus,
+  getPublicAppConfig,
+  readSuggestions,
+  requireAdminAuth,
+  submitDeveloperSuggestion,
+  updatePublicAppConfig,
+  verifyAdminToken,
+} from './server/admin.js';
 import { lookupGermanDictionary } from './server/dictionary.js';
 import {
   CURATED_GERMAN_TITLES,
@@ -862,8 +874,126 @@ async function startServer() {
   const app = express();
   app.use(express.json({ limit: '512kb' }));
 
+  const SERVER_BUILD_ID = new Date().toISOString();
+
   app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  app.get('/api/version', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ name: 'DeutschFlow', buildId: SERVER_BUILD_ID });
+  });
+
+  app.get('/api/app-config', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({ config: getPublicAppConfig() });
+  });
+
+  app.post('/api/suggestions', async (req, res) => {
+    const body = (req.body || {}) as {
+      title?: string;
+      category?: string;
+      message?: string;
+      senderEmail?: string;
+    };
+    const title = typeof body.title === 'string' ? body.title.trim() : '';
+    const category = typeof body.category === 'string' ? body.category.trim() : '';
+    const message = typeof body.message === 'string' ? body.message.trim() : '';
+    const senderEmail = typeof body.senderEmail === 'string' ? body.senderEmail.trim() : '';
+
+    if (title.length < 3) {
+      res.status(400).json({ error: 'يرجى إدخال عنوان واضح للاقتراح (3 أحرف على الأقل).' });
+      return;
+    }
+    if (message.length < 10) {
+      res.status(400).json({ error: 'يرجى كتابة وصف مفصل للاقتراح (10 أحرف على الأقل).' });
+      return;
+    }
+    if (senderEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail)) {
+      res.status(400).json({ error: 'صيغة البريد الإلكتروني للرد غير صالحة.' });
+      return;
+    }
+
+    const result = await submitDeveloperSuggestion({
+      title,
+      category: category || 'General',
+      message,
+      senderEmail: senderEmail || undefined,
+    });
+    res.json({
+      ok: true,
+      id: result.record.id,
+      deliveredViaEmail: result.record.deliveredViaEmail,
+      mailtoUrl: result.mailtoUrl,
+      createdAt: result.record.createdAt,
+    });
+  });
+
+  // Administrator Ownership & Protected Management Routes (strictly server-authorized)
+  app.get('/api/admin/session', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const boot = getAdminBootStatus();
+    const token = extractBearerToken(req);
+    const verified = verifyAdminToken(token);
+    if (!verified) {
+      res.json({
+        authenticated: false,
+        isBootstrapped: boot.isBootstrapped,
+        envPasscodeActive: boot.envPasscodeActive,
+      });
+      return;
+    }
+    res.json({
+      authenticated: true,
+      role: verified.role,
+      email: verified.sub,
+      isBootstrapped: boot.isBootstrapped,
+      envPasscodeActive: boot.envPasscodeActive,
+    });
+  });
+
+  app.post('/api/admin/bootstrap', (req, res) => {
+    const body = (req.body || {}) as { email?: string; password?: string };
+    const email = typeof body.email === 'string' ? body.email : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const out = bootstrapAdminOwner(email, password);
+    if (!out.ok) {
+      res.status(out.status).json({ error: out.error });
+      return;
+    }
+    res.json({ ok: true, role: 'admin', email: email.trim().toLowerCase(), token: out.token });
+  });
+
+  app.post('/api/admin/login', (req, res) => {
+    const body = (req.body || {}) as { email?: string; password?: string };
+    const email = typeof body.email === 'string' ? body.email : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+    const out = authenticateAdminLogin(email, password);
+    if (!out.ok) {
+      res.status(out.status).json({ error: out.error });
+      return;
+    }
+    res.json({ ok: true, role: 'admin', email: email.trim().toLowerCase(), token: out.token });
+  });
+
+  app.post('/api/admin/logout', (_req, res) => {
+    res.json({ ok: true });
+  });
+
+  app.get('/api/admin/overview', requireAdminAuth, (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({
+      config: getPublicAppConfig(),
+      suggestions: readSuggestions(),
+      sourceHealth: Array.from(sourceHealthMap.values()),
+    });
+  });
+
+  app.put('/api/admin/config', requireAdminAuth, (req, res) => {
+    const body = (req.body || {}) as Record<string, unknown>;
+    const updated = updatePublicAppConfig(body);
+    res.json({ ok: true, config: updated });
   });
 
   app.get('/api/sources', (_req, res) => {

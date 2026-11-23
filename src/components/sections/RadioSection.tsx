@@ -109,17 +109,17 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
       offlineCache={offlineCache}
     >
       {/* Search & Filters */}
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 sm:p-5 mb-6 space-y-4">
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-4 sm:p-5 mb-6 space-y-4">
         <div className="flex flex-col md:flex-row gap-3">
           <form onSubmit={handleSearchSubmit} className="flex-1 flex gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-[#52615D] absolute top-1/2 -translate-y-1/2 start-3" />
+              <Search className="w-4 h-4 text-[#52615D] dark:text-[#9EC5BE] absolute top-1/2 -translate-y-1/2 start-3" />
               <input
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="ابحث باسم المحطة أو المدينة أو النوع (مثال: Deutschlandfunk, WDR, Berlin, Jazz)..."
-                className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
+                className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-sm"
               />
             </div>
             <button
@@ -134,7 +134,7 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
             value={selectedState}
             onChange={(e) => setSelectedState(e.target.value)}
             aria-label="Filter by German State"
-            className="px-3 py-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm min-w-[180px]"
+            className="px-3 py-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-sm min-w-[180px]"
           >
             <option value="">كل الولايات الألمانية</option>
             {statesList.map((st) => (
@@ -155,7 +155,7 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                 category === cat.id
                   ? 'bg-[#0E4B4B] text-white'
-                  : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                  : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#1A2421] dark:text-[#F4EFE3] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]'
               }`}
             >
               {lang === 'de' ? cat.labelDe : cat.labelAr}
@@ -163,11 +163,11 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#52615D]">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#52615D] dark:text-[#9EC5BE]">
           <span>
             إجمالي المحطات المتاحة في الدليل الألماني:{' '}
-            <strong className="font-mono-num text-[#0E4B4B]">{poolTotal}</strong> محطة · المطابق حالياً:{' '}
-            <strong className="font-mono-num text-[#0E4B4B]">{total}</strong>
+            <strong className="font-mono-num text-[#0E4B4B] dark:text-[#7FF9EB]">{poolTotal}</strong> محطة · المطابق حالياً:{' '}
+            <strong className="font-mono-num text-[#0E4B4B] dark:text-[#7FF9EB]">{total}</strong>
           </span>
           {query && (
             <button
@@ -187,7 +187,7 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
       {/* Recent Stations strip */}
       {data.recentStations.length > 0 && !query && category === 'all' && (
         <div className="mb-6">
-          <h2 className="text-sm font-semibold text-[#0E4B4B] mb-2.5">المحطات التي استمعت إليها مؤخراً</h2>
+          <h2 className="text-sm font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-2.5">المحطات التي استمعت إليها مؤخراً</h2>
           <div className="flex gap-2.5 overflow-x-auto pb-2">
             {data.recentStations.slice(0, 8).map((rs) => {
               const isCurr = mode === 'radio' && activeStation?.id === rs.id;
@@ -199,7 +199,7 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
                   className={`px-3 py-2 rounded-xl border text-xs font-medium inline-flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer ${
                     isCurr
                       ? 'bg-[#0E4B4B] text-white border-[#0E4B4B]'
-                      : 'bg-white text-[#1A2421] border-[#0E4B4B]/12 hover:border-[#0E4B4B]/35'
+                      : 'bg-white dark:bg-[#072B26] text-[#1A2421] dark:text-[#F4EFE3] border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 hover:border-[#0E4B4B]/35'
                   }`}
                 >
                   <Radio className="w-3.5 h-3.5 shrink-0" />
@@ -215,9 +215,9 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
 
       {/* Error State */}
       {error && (
-        <div className="bg-white rounded-2xl border border-[#D85A40]/40 p-6 text-center mb-6">
+        <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#D85A40]/40 p-6 text-center mb-6">
           <AlertCircle className="w-8 h-8 text-[#D85A40] mx-auto mb-2" />
-          <p className="text-sm font-semibold text-[#1A2421] mb-1">{error}</p>
+          <p className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] mb-1">{error}</p>
           <button
             type="button"
             onClick={() => void loadStations({ nextOffset: 0, force: true })}
@@ -233,11 +233,11 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 9 }).map((_, idx) => (
-            <div key={idx} className="h-28 rounded-2xl bg-white/70 border border-[#0E4B4B]/8 animate-pulse" />
+            <div key={idx} className="h-28 rounded-2xl bg-white/70 dark:bg-[#072B26]/65 border border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24 animate-pulse" />
           ))}
         </div>
       ) : stations.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-10 text-center text-sm text-[#52615D]">
+        <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-10 text-center text-sm text-[#52615D] dark:text-[#9EC5BE]">
           لا توجد محطات مطابقة للبحث الحالي.
         </div>
       ) : (
@@ -267,26 +267,26 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.display = 'none';
                         }}
-                        className="w-12 h-12 rounded-xl object-cover bg-[#F7F3EA] border border-[#0E4B4B]/10 shrink-0"
+                        className="w-12 h-12 rounded-xl object-cover bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 shrink-0"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/10 flex items-center justify-center shrink-0 text-[#0E4B4B] font-semibold text-xs">
+                      <div className="w-12 h-12 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 flex items-center justify-center shrink-0 text-[#0E4B4B] dark:text-[#7FF9EB] font-semibold text-xs">
                         FM
                       </div>
                     )}
 
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-semibold text-[#1A2421] truncate font-german" dir="ltr">
+                      <h3 className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] truncate font-german" dir="ltr">
                         {st.name}
                       </h3>
-                      <p className="text-xs text-[#52615D] truncate mt-0.5">
+                      <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] truncate mt-0.5">
                         {st.state || 'Deutschland'}
                         {st.codec ? ` · ${st.codec}` : ''}
                         {st.bitrate ? ` ${st.bitrate} kbps` : ''}
                       </p>
-                      <div className="text-[11px] text-[#52615D] mt-1 flex items-center gap-1.5">
+                      <div className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] mt-1 flex items-center gap-1.5">
                         {st.isLiveVerified && (
-                          <span className="font-semibold text-[#0E4B4B]">LIVE</span>
+                          <span className="font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">LIVE</span>
                         )}
                         {st.tags.length > 0 && (
                           <>
@@ -304,14 +304,14 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
                       onClick={() => toggleFavorite({ kind: 'radio', item: st })}
                       aria-label="Favorite station"
                       className={`p-1.5 rounded-lg cursor-pointer shrink-0 ${
-                        fav ? 'text-[#D85A40]' : 'text-[#52615D] hover:text-[#0E4B4B]'
+                        fav ? 'text-[#D85A40]' : 'text-[#52615D] dark:text-[#9EC5BE] hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB]'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${fav ? 'fill-current' : ''}`} />
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#0E4B4B]/8">
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24">
                     <button
                       type="button"
                       onClick={() => (isCurrent ? togglePlayPause() : playRadio(st))}
@@ -355,7 +355,7 @@ export const RadioSection: React.FC<RadioSectionProps> = ({
                         href={st.homepage}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-2 rounded-xl bg-[#F7F3EA] text-[#0E4B4B] hover:bg-[#EFE8D8]"
+                        className="p-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]"
                         title="الموقع الرسمي للمحطة"
                       >
                         <ExternalLink className="w-4 h-4" />

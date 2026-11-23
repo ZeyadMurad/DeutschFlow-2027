@@ -215,7 +215,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
       aria-modal="true"
       aria-label={article.title}
     >
-      <div className="bg-[#FAF7F0] text-[#1A2421] w-full max-w-4xl rounded-2xl border border-[#0E4B4B]/20 shadow-2xl overflow-hidden my-auto">
+      <div className="bg-[#FAF7F0] dark:bg-[#05231F] text-[#1A2421] dark:text-[#F4EFE3] w-full max-w-4xl rounded-2xl border border-[#0E4B4B]/20 dark:border-[#3EF2DF]/24 shadow-2xl overflow-hidden my-auto">
         {/* Header */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-[#093D38] text-[#F7F3EA]">
           <div className="flex items-center gap-2 min-w-0">
@@ -247,7 +247,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
         </div>
 
         {/* Audio & Reading Controls */}
-        <div className="bg-white border-b border-[#0E4B4B]/10 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-white dark:bg-[#072B26] border-b border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             {article.audioUrl && (
               <button
@@ -283,15 +283,15 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
               </span>
             </button>
 
-            <div className="flex items-center gap-1 bg-[#F7F3EA] rounded-lg px-2 py-1 text-xs">
-              <span className="text-[#52615D]">السرعة:</span>
+            <div className="flex items-center gap-1 bg-[#F7F3EA] dark:bg-[#041B18] rounded-lg px-2 py-1 text-xs">
+              <span className="text-[#52615D] dark:text-[#9EC5BE]">السرعة:</span>
               {[0.75, 1, 1.25].map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setPlaybackRate(r)}
                   className={`px-1.5 py-0.5 rounded font-mono-num cursor-pointer ${
-                    playbackRate === r ? 'bg-[#0E4B4B] text-white' : 'text-[#1A2421]'
+                    playbackRate === r ? 'bg-[#0E4B4B] text-white' : 'text-[#1A2421] dark:text-[#F4EFE3]'
                   }`}
                 >
                   {r}x
@@ -304,7 +304,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                 value={selectedVoiceURI}
                 onChange={(e) => setSelectedVoiceURI(e.target.value)}
                 aria-label="German TTS Voice"
-                className="text-xs bg-[#F7F3EA] border border-[#0E4B4B]/15 rounded-lg px-2 py-1 max-w-[160px]"
+                className="text-xs bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 rounded-lg px-2 py-1 max-w-[160px]"
               >
                 {germanVoices.map((v) => (
                   <option key={v.voiceURI} value={v.voiceURI}>
@@ -315,14 +315,14 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
             )}
           </div>
 
-          <div className="flex items-center gap-1 bg-[#F7F3EA] rounded-lg p-1 text-xs">
+          <div className="flex items-center gap-1 bg-[#F7F3EA] dark:bg-[#041B18] rounded-lg p-1 text-xs">
             {(['sm', 'md', 'lg', 'xl'] as const).map((sz) => (
               <button
                 key={sz}
                 type="button"
                 onClick={() => setFontSize(sz)}
                 className={`px-2 py-0.5 rounded font-medium cursor-pointer ${
-                  fontSize === sz ? 'bg-[#0E4B4B] text-white' : 'text-[#52615D]'
+                  fontSize === sz ? 'bg-[#0E4B4B] text-white' : 'text-[#52615D] dark:text-[#9EC5BE]'
                 }`}
               >
                 {sz.toUpperCase()}
@@ -339,13 +339,13 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                 src={article.imageUrl}
                 alt={article.title}
                 referrerPolicy="no-referrer"
-                className="w-full max-h-72 object-cover rounded-xl border border-[#0E4B4B]/10"
+                className="w-full max-h-72 object-cover rounded-xl border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24"
               />
             )}
 
             {/* Tappable German Headline */}
             <h2
-              className="text-2xl sm:text-3xl font-editorial font-semibold text-[#1A2421] leading-snug"
+              className="text-2xl sm:text-3xl font-editorial font-semibold text-[#1A2421] dark:text-[#F4EFE3] leading-snug"
               dir="ltr"
               lang="de"
             >
@@ -360,7 +360,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                     onClick={() => handleWordClick(tok, tKey, article.title)}
                     className={`inline rounded-md px-0.5 transition-colors cursor-pointer text-start ${
                       active
-                        ? 'bg-[#C8962E]/30 text-[#093D38] ring-1 ring-[#C8962E]'
+                        ? 'bg-[#C8962E]/30 text-[#093D38] dark:text-[#E8C35A] ring-1 ring-[#C8962E]'
                         : 'hover:bg-[#C8962E]/20'
                     }`}
                     title="اضغط لترجمة هذه الكلمة وحفظها"
@@ -371,7 +371,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
               })}
             </h2>
 
-            <div className="text-xs text-[#52615D] bg-[#EFE8D8]/75 rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs text-[#52615D] dark:text-[#9EC5BE] bg-[#EFE8D8]/75 dark:bg-[#08352F] rounded-xl px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2">
               <span>
                 {article.audioUrl
                   ? 'الصوت المتاح: تسجيل صوتي أصلي من المصدر الرسمي'
@@ -381,7 +381,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                 href={article.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#0E4B4B] font-semibold inline-flex items-center gap-1 hover:underline shrink-0"
+                className="text-[#0E4B4B] dark:text-[#7FF9EB] font-semibold inline-flex items-center gap-1 hover:underline shrink-0"
               >
                 <span>قراءة المقال الأصلي كاملاً</span>
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -390,7 +390,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
 
             {/* Interactive German Prose (tap any word!) */}
             <p
-              className={`${fontSizeClass} leading-relaxed text-[#1A2421] font-german select-text`}
+              className={`${fontSizeClass} leading-relaxed text-[#1A2421] dark:text-[#F4EFE3] font-german select-text`}
               dir="ltr"
               lang="de"
             >
@@ -405,7 +405,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                     onClick={() => handleWordClick(tok, tKey, article.excerpt)}
                     className={`inline rounded-md px-0.5 transition-colors cursor-pointer text-start ${
                       active
-                        ? 'bg-[#C8962E]/30 text-[#093D38] ring-1 ring-[#C8962E]'
+                        ? 'bg-[#C8962E]/30 text-[#093D38] dark:text-[#E8C35A] ring-1 ring-[#C8962E]'
                         : 'hover:bg-[#C8962E]/20 focus:bg-[#C8962E]/25'
                     }`}
                     title="اضغط لترجمة هذه الكلمة وحفظها"
@@ -418,14 +418,14 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
 
             {/* Upgraded Compact German Dictionary Panel */}
             {!focusMode && (
-              <div className="bg-white rounded-2xl border border-[#0E4B4B]/18 shadow-sm p-4 sm:p-5 space-y-3.5">
+              <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/18 dark:border-[#3EF2DF]/24 shadow-sm p-4 sm:p-5 space-y-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-[#0E4B4B]">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">
                     <Languages className="w-4 h-4 text-[#D85A40]" />
                     <span>المعجم الألماني المتكامل والترجمة السياقية</span>
                   </div>
                   {lookupDetails?.provider && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#F7F3EA] text-[#52615D] border border-[#0E4B4B]/10">
+                    <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#F7F3EA] dark:bg-[#041B18] text-[#52615D] dark:text-[#9EC5BE] border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24">
                       {providerLabel(lookupDetails.provider)}
                       {lookupDetails.cached ? ' · مخزن مؤقتاً' : ''}
                     </span>
@@ -447,7 +447,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                       }}
                       placeholder="اضغط على كلمة في النص أو اكتبها هنا..."
                       dir="ltr"
-                      className="flex-1 px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm font-german font-semibold text-[#093D38]"
+                      className="flex-1 px-3 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-sm font-german font-semibold text-[#093D38] dark:text-[#E8C35A]"
                     />
                     {selectedWord.trim() && (
                       <button
@@ -455,7 +455,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                         onClick={() => speakWordDe(selectedWord)}
                         aria-label="Pronounce selected word"
                         title="نطق الكلمة بالألمانية"
-                        className="p-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-[#0E4B4B] hover:bg-[#EFE8D8] cursor-pointer shrink-0"
+                        className="p-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] cursor-pointer shrink-0"
                       >
                         <Volume2 className="w-4 h-4" />
                       </button>
@@ -468,7 +468,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                       value={translation}
                       onChange={(e) => setTranslation(e.target.value)}
                       placeholder="المعنى بالعربية..."
-                      className="flex-1 px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm font-semibold text-[#1A2421]"
+                      className="flex-1 px-3 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3]"
                     />
                     <button
                       type="button"
@@ -483,26 +483,26 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
 
                 {/* Rich Lexical Breakdown Card */}
                 {translating && (
-                  <div className="flex items-center gap-2 text-xs text-[#52615D] bg-[#FAF7F0] rounded-xl px-3.5 py-2.5 border border-[#0E4B4B]/10">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0E4B4B]" />
+                  <div className="flex items-center gap-2 text-xs text-[#52615D] dark:text-[#9EC5BE] bg-[#FAF7F0] dark:bg-[#05231F] rounded-xl px-3.5 py-2.5 border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#0E4B4B] dark:text-[#7FF9EB]" />
                     <span>جارٍ تحليل الكلمة والبحث في المعجم...</span>
                   </div>
                 )}
 
                 {!translating && lookupDetails && (
-                  <div className="bg-[#FAF7F0] rounded-xl border border-[#0E4B4B]/12 p-3.5 space-y-2 text-xs">
+                  <div className="bg-[#FAF7F0] dark:bg-[#05231F] rounded-xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-3.5 space-y-2 text-xs">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
                       <div>
-                        <span className="text-[#52615D]">الكلمة المحددة: </span>
-                        <strong className="font-german text-[#093D38]" dir="ltr">
+                        <span className="text-[#52615D] dark:text-[#9EC5BE]">الكلمة المحددة: </span>
+                        <strong className="font-german text-[#093D38] dark:text-[#E8C35A]" dir="ltr">
                           {lookupDetails.word}
                         </strong>
                       </div>
 
                       {lookupDetails.lemma && (
                         <div>
-                          <span className="text-[#52615D]">الأساس (Lemma): </span>
-                          <strong className="font-german text-[#0E4B4B]" dir="ltr">
+                          <span className="text-[#52615D] dark:text-[#9EC5BE]">الأساس (Lemma): </span>
+                          <strong className="font-german text-[#0E4B4B] dark:text-[#7FF9EB]" dir="ltr">
                             {lookupDetails.article ? `${lookupDetails.article} ` : ''}
                             {lookupDetails.lemma}
                           </strong>
@@ -511,15 +511,15 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
 
                       {lookupDetails.partOfSpeech && (
                         <div>
-                          <span className="text-[#52615D]">نوع الكلمة: </span>
-                          <span className="font-semibold text-[#1A2421]">{lookupDetails.partOfSpeech}</span>
+                          <span className="text-[#52615D] dark:text-[#9EC5BE]">نوع الكلمة: </span>
+                          <span className="font-semibold text-[#1A2421] dark:text-[#F4EFE3]">{lookupDetails.partOfSpeech}</span>
                         </div>
                       )}
 
                       {lookupDetails.plural && (
                         <div>
-                          <span className="text-[#52615D]">الجمع: </span>
-                          <strong className="font-german text-[#0E4B4B]" dir="ltr">
+                          <span className="text-[#52615D] dark:text-[#9EC5BE]">الجمع: </span>
+                          <strong className="font-german text-[#0E4B4B] dark:text-[#7FF9EB]" dir="ltr">
                             {lookupDetails.plural}
                           </strong>
                         </div>
@@ -527,15 +527,15 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                     </div>
 
                     {lookupDetails.explanation && (
-                      <p className="text-[#1A2421] leading-relaxed border-t border-[#0E4B4B]/8 pt-2">
+                      <p className="text-[#1A2421] dark:text-[#F4EFE3] leading-relaxed border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24 pt-2">
                         <BookOpen className="w-3.5 h-3.5 inline-block me-1.5 text-[#C8962E]" />
                         {lookupDetails.explanation}
                       </p>
                     )}
 
                     {lookupDetails.alternatives && lookupDetails.alternatives.length > 0 && (
-                      <p className="text-[#52615D]">
-                        معانٍ أخرى: <span className="text-[#1A2421] font-medium">{lookupDetails.alternatives.join(' · ')}</span>
+                      <p className="text-[#52615D] dark:text-[#9EC5BE]">
+                        معانٍ أخرى: <span className="text-[#1A2421] dark:text-[#F4EFE3] font-medium">{lookupDetails.alternatives.join(' · ')}</span>
                       </p>
                     )}
                   </div>
@@ -549,9 +549,9 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
 
                 {/* Original Context Sentence Preview */}
                 {selectedSentence && selectedWord && (
-                  <div className="text-xs bg-[#F7F3EA]/70 border border-[#0E4B4B]/10 rounded-xl px-3 py-2 space-y-0.5">
-                    <span className="text-[11px] font-semibold text-[#52615D]">الجملة الأصلية (السياق):</span>
-                    <p className="font-german text-[#1A2421] leading-relaxed" dir="ltr" lang="de">
+                  <div className="text-xs bg-[#F7F3EA]/70 border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 rounded-xl px-3 py-2 space-y-0.5">
+                    <span className="text-[11px] font-semibold text-[#52615D] dark:text-[#9EC5BE]">الجملة الأصلية (السياق):</span>
+                    <p className="font-german text-[#1A2421] dark:text-[#F4EFE3] leading-relaxed" dir="ltr" lang="de">
                       {selectedSentence}
                     </p>
                   </div>
@@ -564,7 +564,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                     value={noteInput}
                     onChange={(e) => setNoteInput(e.target.value)}
                     placeholder="ملاحظة شخصية اختيارية (مثال: جمع الكلمة أو تصريف الفعل)..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-xs"
+                    className="flex-1 px-3 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-xs"
                   />
                   <button
                     type="button"
@@ -589,7 +589,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
             )}
 
             {/* Footer Actions */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#0E4B4B]/10">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -597,7 +597,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                   className={`px-3.5 py-2 rounded-xl text-xs font-medium inline-flex items-center gap-1.5 border cursor-pointer ${
                     isFav
                       ? 'bg-[#D85A40] text-white border-[#D85A40]'
-                      : 'bg-white text-[#0E4B4B] border-[#0E4B4B]/15'
+                      : 'bg-white dark:bg-[#072B26] text-[#0E4B4B] dark:text-[#7FF9EB] border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24'
                   }`}
                 >
                   <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
@@ -610,7 +610,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                   className={`px-3.5 py-2 rounded-xl text-xs font-medium inline-flex items-center gap-1.5 border cursor-pointer ${
                     isReadLater
                       ? 'bg-[#0E4B4B] text-white border-[#0E4B4B]'
-                      : 'bg-white text-[#0E4B4B] border-[#0E4B4B]/15'
+                      : 'bg-white dark:bg-[#072B26] text-[#0E4B4B] dark:text-[#7FF9EB] border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24'
                   }`}
                 >
                   <BookmarkPlus className="w-3.5 h-3.5" />

@@ -86,7 +86,7 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
       aria-modal="true"
       aria-label="Unified Search"
     >
-      <div className="bg-[#FAF7F0] text-[#1A2421] w-full max-w-4xl rounded-2xl border border-[#0E4B4B]/20 shadow-2xl overflow-hidden my-6">
+      <div className="bg-[#FAF7F0] dark:bg-[#05231F] text-[#1A2421] dark:text-[#F4EFE3] w-full max-w-4xl rounded-2xl border border-[#0E4B4B]/20 dark:border-[#3EF2DF]/24 shadow-2xl overflow-hidden my-6">
         <div className="bg-[#0E4B4B] text-[#F7F3EA] px-5 py-4 flex items-center justify-between gap-3">
           <h2 className="text-base sm:text-lg font-editorial font-semibold">
             البحث الموحد في عالم الإعلام الألماني
@@ -104,14 +104,14 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
         <div className="p-4 sm:p-6 space-y-4">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-[#52615D] absolute top-1/2 -translate-y-1/2 start-3" />
+              <Search className="w-4 h-4 text-[#52615D] dark:text-[#9EC5BE] absolute top-1/2 -translate-y-1/2 start-3" />
               <input
                 type="text"
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="ابحث عن محطة إذاعية، صحيفة، خبر، فيديو، بودكاست، فيلم أو منصة..."
-                className="w-full ps-9 pe-3 py-3 rounded-xl bg-white border border-[#0E4B4B]/20 text-sm"
+                className="w-full ps-9 pe-3 py-3 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/20 dark:border-[#3EF2DF]/24 text-sm"
               />
             </div>
             <button
@@ -142,7 +142,7 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                   className={`px-3 py-1 rounded-lg text-xs font-medium cursor-pointer ${
                     filterType === t.id
                       ? 'bg-[#0E4B4B] text-white'
-                      : 'bg-white text-[#1A2421] border border-[#0E4B4B]/12'
+                      : 'bg-white dark:bg-[#072B26] text-[#1A2421] dark:text-[#F4EFE3] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24'
                   }`}
                 >
                   {t.label}
@@ -175,14 +175,14 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
           {/* Results */}
           <div className="max-h-[58vh] overflow-y-auto space-y-5 pt-2">
             {!searched && (
-              <p className="text-xs text-[#52615D] text-center py-8">
+              <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] text-center py-8">
                 اكتب كلمة مفتاحية بالألمانية أو اسم مصدر (مثال: Berlin, Wirtschaft, Tagesschau, ARTE, WDR).
               </p>
             )}
 
             {searched && showType('radio') && results.radio.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-[#0E4B4B] mb-2">
+                <h3 className="text-xs font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-2">
                   الإذاعات ({results.radio.length})
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -194,12 +194,12 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                         playRadio(st);
                         onClose();
                       }}
-                      className="p-3 rounded-xl bg-white border border-[#0E4B4B]/12 flex items-center justify-between text-start hover:border-[#0E4B4B] cursor-pointer"
+                      className="p-3 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 flex items-center justify-between text-start hover:border-[#0E4B4B] cursor-pointer"
                     >
                       <span className="text-xs font-semibold font-german truncate" dir="ltr">
                         {st.name}
                       </span>
-                      <Radio className="w-4 h-4 text-[#0E4B4B] shrink-0" />
+                      <Radio className="w-4 h-4 text-[#0E4B4B] dark:text-[#7FF9EB] shrink-0" />
                     </button>
                   ))}
                 </div>
@@ -208,7 +208,7 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
 
             {searched && showType('news') && results.news.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-[#0E4B4B] mb-2">
+                <h3 className="text-xs font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-2">
                   الأخبار والمقالات ({results.news.length})
                 </h3>
                 <div className="space-y-2">
@@ -220,15 +220,15 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                         onOpenArticle(art);
                         onClose();
                       }}
-                      className="w-full p-3 rounded-xl bg-white border border-[#0E4B4B]/12 flex items-center justify-between gap-3 text-start hover:border-[#0E4B4B] cursor-pointer"
+                      className="w-full p-3 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 flex items-center justify-between gap-3 text-start hover:border-[#0E4B4B] cursor-pointer"
                     >
                       <div className="min-w-0">
-                        <p className="text-[11px] text-[#0E4B4B] font-semibold">{art.sourceName}</p>
-                        <p className="text-xs font-medium text-[#1A2421] truncate font-german" dir="ltr">
+                        <p className="text-[11px] text-[#0E4B4B] dark:text-[#7FF9EB] font-semibold">{art.sourceName}</p>
+                        <p className="text-xs font-medium text-[#1A2421] dark:text-[#F4EFE3] truncate font-german" dir="ltr">
                           {art.title}
                         </p>
                       </div>
-                      <BookOpen className="w-4 h-4 text-[#0E4B4B] shrink-0" />
+                      <BookOpen className="w-4 h-4 text-[#0E4B4B] dark:text-[#7FF9EB] shrink-0" />
                     </button>
                   ))}
                 </div>
@@ -237,7 +237,7 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
 
             {searched && showType('videos') && results.videos.length > 0 && (
               <div>
-                <h3 className="text-xs font-semibold text-[#0E4B4B] mb-2">
+                <h3 className="text-xs font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-2">
                   فيديوهات ووثائقيات ({results.videos.length})
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -249,7 +249,7 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                         onSelectVideo(v, results.videos);
                         onClose();
                       }}
-                      className="p-2.5 rounded-xl bg-white border border-[#0E4B4B]/12 flex items-center gap-3 text-start hover:border-[#0E4B4B] cursor-pointer"
+                      className="p-2.5 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 flex items-center gap-3 text-start hover:border-[#0E4B4B] cursor-pointer"
                     >
                       <img
                         src={v.thumbnailUrl}
@@ -261,7 +261,7 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                         <p className="text-xs font-medium line-clamp-2 font-german" dir="ltr">
                           {v.title}
                         </p>
-                        <p className="text-[11px] text-[#52615D] mt-0.5">{v.channelName}</p>
+                        <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] mt-0.5">{v.channelName}</p>
                       </div>
                       <Play className="w-4 h-4 text-[#D85A40] shrink-0" />
                     </button>
@@ -274,7 +274,7 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
               showType('podcasts') &&
               (results.podcasts.length > 0 || results.episodes.length > 0) && (
                 <div>
-                  <h3 className="text-xs font-semibold text-[#0E4B4B] mb-2">
+                  <h3 className="text-xs font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-2">
                     البودكاست ({results.podcasts.length + results.episodes.length})
                   </h3>
                   <div className="space-y-2">
@@ -286,12 +286,12 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                           onNavigateSection('podcasts');
                           onClose();
                         }}
-                        className="w-full p-3 rounded-xl bg-white border border-[#0E4B4B]/12 flex items-center justify-between text-start cursor-pointer"
+                        className="w-full p-3 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 flex items-center justify-between text-start cursor-pointer"
                       >
                         <span className="text-xs font-semibold font-german" dir="ltr">
                           {p.title} · {p.publisher}
                         </span>
-                        <span className="text-[11px] text-[#0E4B4B]">عرض الحلقات</span>
+                        <span className="text-[11px] text-[#0E4B4B] dark:text-[#7FF9EB]">عرض الحلقات</span>
                       </button>
                     ))}
                     {results.episodes.map((ep) => (
@@ -302,12 +302,12 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                           if (ep.hasAudio) playPodcastEpisode(ep);
                           onClose();
                         }}
-                        className="w-full p-3 rounded-xl bg-white border border-[#0E4B4B]/12 flex items-center justify-between text-start cursor-pointer"
+                        className="w-full p-3 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 flex items-center justify-between text-start cursor-pointer"
                       >
                         <span className="text-xs font-german truncate" dir="ltr">
                           {ep.title} ({ep.showTitle})
                         </span>
-                        <Play className="w-4 h-4 text-[#0E4B4B] shrink-0" />
+                        <Play className="w-4 h-4 text-[#0E4B4B] dark:text-[#7FF9EB] shrink-0" />
                       </button>
                     ))}
                   </div>
@@ -316,7 +316,7 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
 
             {searched && showType('movies') && (visibleMovies.length > 0 || results.platforms.length > 0) && (
               <div>
-                <h3 className="text-xs font-semibold text-[#0E4B4B] mb-2">الأفلام والمنصات</h3>
+                <h3 className="text-xs font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-2">الأفلام والمنصات</h3>
                 <div className="space-y-2">
                   {visibleMovies.map((m) => (
                     <a
@@ -324,12 +324,12 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                       href={m.watchUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-3 rounded-xl bg-white border border-[#0E4B4B]/12 flex items-center justify-between"
+                      className="p-3 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 flex items-center justify-between"
                     >
                       <span className="text-xs font-semibold font-german" dir="ltr">
                         {m.title} ({m.platformName})
                       </span>
-                      <ExternalLink className="w-4 h-4 text-[#0E4B4B]" />
+                      <ExternalLink className="w-4 h-4 text-[#0E4B4B] dark:text-[#7FF9EB]" />
                     </a>
                   ))}
                   {!onlyInternal &&
@@ -341,12 +341,12 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
                           onNavigateSection('movies');
                           onClose();
                         }}
-                        className="w-full p-3 rounded-xl bg-white border border-[#0E4B4B]/12 flex items-center justify-between text-start cursor-pointer"
+                        className="w-full p-3 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 flex items-center justify-between text-start cursor-pointer"
                       >
                         <span className="text-xs font-semibold font-german" dir="ltr">
                           {pl.name}
                         </span>
-                        <span className="text-[11px] text-[#0E4B4B]">دليل المنصات</span>
+                        <span className="text-[11px] text-[#0E4B4B] dark:text-[#7FF9EB]">دليل المنصات</span>
                       </button>
                     ))}
                 </div>

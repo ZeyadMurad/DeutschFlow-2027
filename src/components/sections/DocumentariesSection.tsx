@@ -95,15 +95,15 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
       refreshing={loading}
       lastUpdated={lastUpdated}
     >
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 sm:p-5 mb-6 space-y-4">
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-4 sm:p-5 mb-6 space-y-4">
         <div className="relative">
-          <Search className="w-4 h-4 text-[#52615D] absolute top-1/2 -translate-y-1/2 start-3" />
+          <Search className="w-4 h-4 text-[#52615D] dark:text-[#9EC5BE] absolute top-1/2 -translate-y-1/2 start-3" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="ابحث في الوثائقيات والتحقيقات (ARTE, DW Documentary, Terra X, ZDFinfo, STRG_F, NDR/WDR/SWR/MDR)..."
-            className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
+            className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-sm"
           />
         </div>
 
@@ -116,7 +116,7 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
                 topic === t.id
                   ? 'bg-[#0E4B4B] text-white'
-                  : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                  : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#1A2421] dark:text-[#F4EFE3] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]'
               }`}
             >
               {t.labelAr}
@@ -128,11 +128,11 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
       {loading && videos.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {Array.from({ length: 9 }).map((_, idx) => (
-            <div key={idx} className="h-64 rounded-2xl bg-white/70 animate-pulse" />
+            <div key={idx} className="h-64 rounded-2xl bg-white/70 dark:bg-[#072B26]/65 animate-pulse" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-10 text-center text-sm text-[#52615D]">
+        <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-10 text-center text-sm text-[#52615D] dark:text-[#9EC5BE]">
           لا توجد وثائقيات مطابقة لهذا التصنيف حالياً. جرّب «كل الوثائقيات» أو كلمة بحث أخرى.
         </div>
       ) : (
@@ -177,7 +177,7 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
                   <div className="p-4">
                     <h3
                       onClick={() => onSelectVideo(video, channelVids)}
-                      className="text-sm sm:text-base font-semibold text-[#1A2421] line-clamp-2 cursor-pointer hover:text-[#0E4B4B] font-german"
+                      className="text-sm sm:text-base font-semibold text-[#1A2421] dark:text-[#F4EFE3] line-clamp-2 cursor-pointer hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB] font-german"
                       dir="ltr"
                       lang="de"
                     >
@@ -185,7 +185,7 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
                     </h3>
                     {video.description && (
                       <p
-                        className="text-xs text-[#52615D] line-clamp-2 mt-1.5 font-german"
+                        className="text-xs text-[#52615D] dark:text-[#9EC5BE] line-clamp-2 mt-1.5 font-german"
                         dir="ltr"
                         lang="de"
                       >
@@ -195,7 +195,7 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
                   </div>
                 </div>
 
-                <div className="px-4 py-2.5 bg-[#FAF7F0] border-t border-[#0E4B4B]/8 flex items-center justify-between">
+                <div className="px-4 py-2.5 bg-[#FAF7F0] dark:bg-[#05231F] border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => onSelectVideo(video, channelVids)}
@@ -210,7 +210,7 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
                       type="button"
                       onClick={() => toggleFavorite({ kind: 'videos', item: video })}
                       className={`p-1.5 rounded-lg cursor-pointer ${
-                        isFav ? 'text-[#D85A40]' : 'text-[#52615D] hover:text-[#0E4B4B]'
+                        isFav ? 'text-[#D85A40]' : 'text-[#52615D] dark:text-[#9EC5BE] hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB]'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
@@ -219,7 +219,7 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
                       type="button"
                       onClick={() => toggleFavorite({ kind: 'watchLater', item: video })}
                       className={`p-1.5 rounded-lg cursor-pointer ${
-                        isWatchLater ? 'text-[#0E4B4B]' : 'text-[#52615D] hover:text-[#0E4B4B]'
+                        isWatchLater ? 'text-[#0E4B4B] dark:text-[#7FF9EB]' : 'text-[#52615D] dark:text-[#9EC5BE] hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB]'
                       }`}
                     >
                       <BookmarkPlus className="w-4 h-4" />
@@ -228,7 +228,7 @@ export const DocumentariesSection: React.FC<DocumentariesSectionProps> = ({
                       href={video.watchUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg text-[#52615D] hover:text-[#0E4B4B]"
+                      className="p-1.5 rounded-lg text-[#52615D] dark:text-[#9EC5BE] hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB]"
                     >
                       <ExternalLink className="w-4 h-4" />
                     </a>

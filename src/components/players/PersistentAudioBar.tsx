@@ -20,7 +20,7 @@ function formatTime(sec: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export const PersistentAudioBar: React.FC = () => {
+export const PersistentAudioBar: React.FC<{ hasBottomNav?: boolean }> = ({ hasBottomNav = false }) => {
   const {
     mode,
     status,
@@ -102,7 +102,9 @@ export const PersistentAudioBar: React.FC = () => {
   return (
     <aside
       aria-label="Audio Player"
-      className="fixed bottom-0 inset-x-0 z-40 bg-[#0E4B4B] text-[#F7F3EA] border-t border-[#B68934]/35 shadow-2xl"
+      className={`fixed ${
+        hasBottomNav ? 'bottom-[82px] mx-2 sm:mx-auto sm:max-w-5xl rounded-2xl border' : 'bottom-0 border-t'
+      } inset-x-0 z-40 bg-[#083833]/96 backdrop-blur-md text-[#F7F3EA] border-[#E8C35A]/35 shadow-2xl`}
     >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-col gap-1.5">
         {mode === 'podcast' && duration > 0 && (

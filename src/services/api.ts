@@ -341,3 +341,156 @@ export async function runUnifiedSearch(q: string): Promise<{
   if (!res.ok) throw new Error('Search failed');
   return res.json();
 }
+
+export interface PublicAppConfig {
+  heroTitleAr: string;
+  heroTitleDe: string;
+  heroTitleEn: string;
+  heroSubtitleAr: string;
+  heroSubtitleDe: string;
+  heroSubtitleEn: string;
+  landingHeadlineAr: string;
+  landingHeadlineDe: string;
+  landingHeadlineEn: string;
+  announcementAr: string;
+  announcementDe: string;
+  announcementEn: string;
+  hiddenModuleIds: string[];
+  updatedAt: string;
+}
+
+export interface AdminSessionStatus {
+  authenticated: boolean;
+  isBootstrapped: boolean;
+  envPasscodeActive: boolean;
+  role?: 'admin';
+  email?: string;
+}
+
+export interface SuggestionItem {
+  id: string;
+  title: string;
+  category: string;
+  message: string;
+  senderEmail?: string;
+  deliveredViaEmail: boolean;
+  createdAt: string;
+}
+
+export async function fetchPublicAppConfig(): Promise<PublicAppConfig | null> {
+  try {
+    const res = await fetch('/api/app-config');
+    if (!res.ok) return null;
+    const data = await parseJsonSafely<{ config: PublicAppConfig }>(res);
+    return data.config;
+  } catch {
+    return null;
+  }
+}
+
+export async function submitDeveloperSuggestion(params: {
+  title: string;
+  category: string;
+  message: string;
+  senderEmail?: string;
+}): Promise<{
+  ok: boolean;
+  id: string;
+  deliveredViaEmail: boolean;
+  mailtoUrl: string;
+  createdAt: string;
+}> {
+  const res = await fetch('/api/suggestions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(params),
+  });
+  const data = await parseJsonSafely<{
+    ok: boolean;
+    id: string;
+    deliveredViaEmail: boolean;
+    mailtoUrl: string;
+    createdAt: string;
+    error?: string;
+  }>(res);
+  if (!res.ok) {
+    throw new Error(data.error || 'تعذر إرسال الاقتراح حالياً.');
+  }
+  return data;
+}
+
+export async function fetchAdminSession(token: string | null): Promise<AdminSessionStatus> {
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch('/api/admin/session', { headers });
+  return parseJsonSafely<AdminSessionStatus>(res);
+}
+
+export async function bootstrapAdminOwner(
+  email: string,
+  password: string
+): Promise<{ token: string; email: string; role: 'admin' }> {
+  const res = await fetch('/api/admin/bootstrap', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await parseJsonSafely<{ token?: string; email?: string; role?: 'admin'; error?: string }>(res);
+  if (!res.ok || !data.token) {
+    throw new Error(data.error || 'Owner claim failed');
+  }
+  return { token: data.token, email: data.email || email, role: data.role || 'admin' };
+}
+
+export async function loginAdminOwner(
+  email: string,
+  password: string
+): Promise<{ token: string; email: string; role: 'admin' }> {
+  const res = await fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  const data = await parseJsonSafely<{ token?: string; email?: string; role?: 'admin'; error?: string }>(res);
+  if (!res.ok || !data.token) {
+    throw new Error(data.error || 'Invalid credentials');
+  }
+  return { token: data.token, email: data.email || email, role: data.role || 'admin' };
+}
+
+export async function fetchAdminOverview(token: string): Promise<{
+  config: PublicAppConfig;
+  suggestions: SuggestionItem[];
+  sourceHealth: SourceHealthStatus[];
+}> {
+  const res = await fetch('/api/admin/overview', {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+  });
+  const data = await parseJsonSafely<{
+    config: PublicAppConfig;
+    suggestions: SuggestionItem[];
+    sourceHealth: SourceHealthStatus[];
+    error?: string;
+  }>(res);
+  if (!res.ok) throw new Error(data.error || 'Unauthorized');
+  return data;
+}
+
+export async function updateAdminConfig(
+  token: string,
+  patch: Partial<PublicAppConfig>
+): Promise<PublicAppConfig> {
+  const res = await fetch('/api/admin/config', {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(patch),
+  });
+  const data = await parseJsonSafely<{ config?: PublicAppConfig; error?: string }>(res);
+  if (!res.ok || !data.config) throw new Error(data.error || 'Update failed');
+  return data.config;
+}
+

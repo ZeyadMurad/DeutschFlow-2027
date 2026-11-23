@@ -88,8 +88,8 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
       refreshing={loading}
     >
       {/* Level selector */}
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 sm:p-5 mb-6 space-y-3">
-        <p className="text-xs text-[#52615D]">
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-4 sm:p-5 mb-6 space-y-3">
+        <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">
           يعرض هذا القسم حصراً المصادر التعليمية والمحتوى الألماني المبسط المصنّف فعلياً للمتعلمين (مثل DW Learn German و Nachrichtenleicht و Langsam gesprochene Nachrichten و Easy German و Slow German)، دون تخمين مستويات على الصحف العامة.
         </p>
 
@@ -102,7 +102,7 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 cursor-pointer ${
                 cefr === lvl.id
                   ? 'bg-[#0E4B4B] text-white'
-                  : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                  : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#1A2421] dark:text-[#F4EFE3] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]'
               }`}
             >
               {lvl.label}
@@ -113,13 +113,13 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
 
       {/* 1. Simplified Reading & Audio News */}
       <div className="mb-8">
-        <h2 className="text-base font-semibold text-[#0E4B4B] mb-3">
+        <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-3">
           1. أخبار وقراءة بالألمانية المبسطة — استمع واقرأ واحفظ الكلمات
         </h2>
         {loading && filteredNews.length === 0 ? (
-          <div className="h-32 rounded-2xl bg-white/70 animate-pulse" />
+          <div className="h-32 rounded-2xl bg-white/70 dark:bg-[#072B26]/65 animate-pulse" />
         ) : filteredNews.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[#0E4B4B]/10 p-6 text-xs text-[#52615D]">
+          <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 p-6 text-xs text-[#52615D] dark:text-[#9EC5BE]">
             لا توجد نشرات مبسطة لهذا المستوى حالياً. للمستويات المتقدمة B2/C1/C2 جرّب غرفة الأخبار والصحف والبودكاست العام!
           </div>
         ) : (
@@ -127,8 +127,8 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
             {filteredNews.slice(0, 9).map((art) => (
               <article key={art.id} className="df-card rounded-2xl p-4 flex flex-col justify-between gap-3">
                 <div>
-                  <div className="text-xs text-[#52615D] mb-1.5">
-                    <span className="font-semibold text-[#0E4B4B]">{art.sourceName}</span>
+                  <div className="text-xs text-[#52615D] dark:text-[#9EC5BE] mb-1.5">
+                    <span className="font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">{art.sourceName}</span>
                     {art.cefrLevel && ` · ${art.cefrLevel}`}
                     {' · '}
                     <span className="font-mono-num">
@@ -137,17 +137,17 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
                   </div>
                   <h3
                     onClick={() => onOpenArticle(art)}
-                    className="text-sm font-semibold text-[#1A2421] cursor-pointer hover:text-[#0E4B4B] font-german"
+                    className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] cursor-pointer hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB] font-german"
                     dir="ltr"
                   >
                     {art.title}
                   </h3>
-                  <p className="text-xs text-[#52615D] line-clamp-3 mt-1.5 font-german" dir="ltr">
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] line-clamp-3 mt-1.5 font-german" dir="ltr">
                     {art.excerpt}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-[#0E4B4B]/8">
+                <div className="flex items-center gap-2 pt-2 border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24">
                   <button
                     type="button"
                     onClick={() => onOpenArticle(art)}
@@ -173,7 +173,7 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
 
       {/* 2. Learner Podcasts */}
       <div className="mb-8">
-        <h2 className="text-base font-semibold text-[#0E4B4B] mb-3">
+        <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-3">
           2. بودكاست مخصص لمتعلمي الألمانية
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -189,10 +189,10 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
                   />
                 )}
                 <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-[#1A2421] font-german truncate" dir="ltr">
+                  <h3 className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] font-german truncate" dir="ltr">
                     {show.title}
                   </h3>
-                  <p className="text-xs text-[#52615D]">
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">
                     {show.publisher} {show.cefrLevel ? `· ${show.cefrLevel}` : ''}
                   </p>
                 </div>
@@ -202,9 +202,9 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
                 {show.episodes.slice(0, 3).map((ep) => (
                   <div
                     key={ep.id}
-                    className="p-2.5 rounded-xl bg-[#FAF7F0] flex items-center justify-between gap-2"
+                    className="p-2.5 rounded-xl bg-[#FAF7F0] dark:bg-[#05231F] flex items-center justify-between gap-2"
                   >
-                    <span className="text-xs font-german text-[#1A2421] line-clamp-1" dir="ltr">
+                    <span className="text-xs font-german text-[#1A2421] dark:text-[#F4EFE3] line-clamp-1" dir="ltr">
                       {ep.title}
                     </span>
                     {ep.hasAudio && (
@@ -227,7 +227,7 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
 
       {/* 3. Learner YouTube Channels */}
       <div>
-        <h2 className="text-base font-semibold text-[#0E4B4B] mb-3">
+        <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-3">
           3. فيديوهات تعلم الألمانية (Easy German, DW Learn German, 24h Deutsch, Slow German, lingoni, Herr Antrim)
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -268,7 +268,7 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
                       filteredVideos.filter((v) => v.channelId === video.channelId)
                     )
                   }
-                  className="text-sm font-semibold text-[#1A2421] line-clamp-2 cursor-pointer font-german"
+                  className="text-sm font-semibold text-[#1A2421] dark:text-[#F4EFE3] line-clamp-2 cursor-pointer font-german"
                   dir="ltr"
                 >
                   {video.title}

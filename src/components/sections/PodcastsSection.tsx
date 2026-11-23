@@ -146,31 +146,31 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
         <button
           type="button"
           onClick={() => setSelectedShow(null)}
-          className="mb-4 px-3.5 py-2 rounded-xl bg-white border border-[#0E4B4B]/15 text-xs font-semibold text-[#0E4B4B] inline-flex items-center gap-1.5 cursor-pointer hover:bg-[#F7F3EA]"
+          className="mb-4 px-3.5 py-2 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-xs font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] inline-flex items-center gap-1.5 cursor-pointer hover:bg-[#F7F3EA] dark:hover:bg-[#0B3C35] dark:bg-[#041B18]"
         >
           <ArrowRight className="w-3.5 h-3.5" />
           <span>العودة إلى قائمة البودكاست</span>
         </button>
 
-        <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-5 sm:p-6 mb-6 flex flex-col sm:flex-row gap-5">
+        <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-5 sm:p-6 mb-6 flex flex-col sm:flex-row gap-5">
           {selectedShow.coverUrl ? (
             <img
               src={selectedShow.coverUrl}
               alt={selectedShow.title}
               referrerPolicy="no-referrer"
-              className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl object-cover shrink-0 border border-[#0E4B4B]/12 bg-[#EFE8D8]"
+              className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl object-cover shrink-0 border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 bg-[#EFE8D8]"
             />
           ) : (
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl bg-[#0E4B4B]/10 flex items-center justify-center shrink-0">
-              <Headphones className="w-10 h-10 text-[#0E4B4B]" />
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-2xl bg-[#0E4B4B]/10 dark:bg-[#3EF2DF]/12 flex items-center justify-center shrink-0">
+              <Headphones className="w-10 h-10 text-[#0E4B4B] dark:text-[#7FF9EB]" />
             </div>
           )}
 
           <div className="flex-1 space-y-2">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
-                <p className="text-xs text-[#52615D]">{selectedShow.publisher}</p>
-                <h2 className="text-xl sm:text-2xl font-editorial font-semibold text-[#1A2421]" dir="ltr">
+                <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">{selectedShow.publisher}</p>
+                <h2 className="text-xl sm:text-2xl font-editorial font-semibold text-[#1A2421] dark:text-[#F4EFE3]" dir="ltr">
                   {selectedShow.title}
                 </h2>
               </div>
@@ -182,7 +182,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                   className={`px-3 py-1.5 rounded-xl text-xs font-medium inline-flex items-center gap-1.5 border cursor-pointer ${
                     showFav
                       ? 'bg-[#D85A40] text-white border-[#D85A40]'
-                      : 'bg-[#F7F3EA] text-[#0E4B4B] border-[#0E4B4B]/15'
+                      : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24'
                   }`}
                 >
                   <Heart className={`w-3.5 h-3.5 ${showFav ? 'fill-current' : ''}`} />
@@ -192,7 +192,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                   href={selectedShow.websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-xl bg-[#0E4B4B]/10 text-[#0E4B4B] text-xs font-medium inline-flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-xl bg-[#0E4B4B]/10 dark:bg-[#3EF2DF]/12 text-[#0E4B4B] dark:text-[#7FF9EB] text-xs font-medium inline-flex items-center gap-1"
                 >
                   <span>الموقع الرسمي</span>
                   <ExternalLink className="w-3.5 h-3.5" />
@@ -200,8 +200,8 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
               </div>
             </div>
 
-            <p className="text-sm text-[#52615D]">{selectedShow.descriptionAr}</p>
-            <p className="text-xs text-[#52615D] font-german" dir="ltr">
+            <p className="text-sm text-[#52615D] dark:text-[#9EC5BE]">{selectedShow.descriptionAr}</p>
+            <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] font-german" dir="ltr">
               {selectedShow.descriptionDe}
             </p>
           </div>
@@ -209,8 +209,8 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
 
         {/* Episodes List */}
         {selectedShow.episodes.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-8 text-center space-y-2">
-            <p className="text-sm font-medium text-[#1A2421]">
+          <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-8 text-center space-y-2">
+            <p className="text-sm font-medium text-[#1A2421] dark:text-[#F4EFE3]">
               تعذّر جلب حلقات هذا البودكاست مباشرة الآن.
             </p>
             {selectedShow.lastError && (
@@ -243,7 +243,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                   }`}
                 >
                   <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="text-xs text-[#52615D] flex flex-wrap items-center gap-2 font-mono-num">
+                    <div className="text-xs text-[#52615D] dark:text-[#9EC5BE] flex flex-wrap items-center gap-2 font-mono-num">
                       <span>{new Date(ep.publishedAt).toLocaleDateString('de-DE')}</span>
                       {ep.duration && (
                         <>
@@ -261,11 +261,11 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                       )}
                     </div>
 
-                    <h3 className="text-base font-semibold text-[#1A2421] font-german" dir="ltr" lang="de">
+                    <h3 className="text-base font-semibold text-[#1A2421] dark:text-[#F4EFE3] font-german" dir="ltr" lang="de">
                       {ep.title}
                     </h3>
                     {ep.description && (
-                      <p className="text-xs text-[#52615D] line-clamp-2 font-german" dir="ltr" lang="de">
+                      <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] line-clamp-2 font-german" dir="ltr" lang="de">
                         {ep.description}
                       </p>
                     )}
@@ -296,7 +296,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                           type="button"
                           onClick={() => enqueuePodcastEpisode(ep)}
                           title="إضافة إلى قائمة التشغيل"
-                          className="p-2 rounded-xl bg-[#F7F3EA] text-[#0E4B4B] hover:bg-[#EFE8D8] cursor-pointer"
+                          className="p-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] cursor-pointer"
                         >
                           <ListPlus className="w-4 h-4" />
                         </button>
@@ -306,7 +306,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                         href={ep.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3.5 py-2 rounded-xl bg-[#F7F3EA] text-[#0E4B4B] text-xs font-semibold inline-flex items-center gap-1.5"
+                        className="px-3.5 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] text-xs font-semibold inline-flex items-center gap-1.5"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         <span>التشغيل في الموقع الرسمي</span>
@@ -318,7 +318,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                       onClick={() => toggleFavorite({ kind: 'episodes', item: ep })}
                       aria-label="Favorite episode"
                       className={`p-2 rounded-xl cursor-pointer ${
-                        isFavEp ? 'text-[#D85A40]' : 'text-[#52615D] hover:text-[#0E4B4B]'
+                        isFavEp ? 'text-[#D85A40]' : 'text-[#52615D] dark:text-[#9EC5BE] hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB]'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${isFavEp ? 'fill-current' : ''}`} />
@@ -328,7 +328,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                       onClick={() => toggleFavorite({ kind: 'listenLater', item: ep })}
                       aria-label="Listen later"
                       className={`p-2 rounded-xl cursor-pointer ${
-                        isListenLater ? 'text-[#0E4B4B]' : 'text-[#52615D] hover:text-[#0E4B4B]'
+                        isListenLater ? 'text-[#0E4B4B] dark:text-[#7FF9EB]' : 'text-[#52615D] dark:text-[#9EC5BE] hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB]'
                       }`}
                     >
                       <BookmarkPlus className="w-4 h-4" />
@@ -354,16 +354,16 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
       offlineCache={offlineCache}
     >
       {/* Filters & Discovery */}
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 sm:p-5 mb-6 space-y-4">
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-4 sm:p-5 mb-6 space-y-4">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           <div className="relative">
-            <Search className="w-4 h-4 text-[#52615D] absolute top-1/2 -translate-y-1/2 start-3" />
+            <Search className="w-4 h-4 text-[#52615D] dark:text-[#9EC5BE] absolute top-1/2 -translate-y-1/2 start-3" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="تصفية البودكاستات المدمجة (11KM, Was jetzt?, Hotel Matze, Mordlust...)"
-              className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
+              className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-sm"
             />
           </div>
 
@@ -373,7 +373,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
               value={discoverQuery}
               onChange={(e) => setDiscoverQuery(e.target.value)}
               placeholder="اكتشف بودكاست ألماني إضافي من دليل أبل الألماني..."
-              className="flex-1 px-3 py-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
+              className="flex-1 px-3 py-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-sm"
             />
             <button
               type="submit"
@@ -395,7 +395,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
                 category === cat.id
                   ? 'bg-[#0E4B4B] text-white'
-                  : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                  : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#1A2421] dark:text-[#F4EFE3] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]'
               }`}
             >
               {cat.labelAr}
@@ -404,9 +404,9 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
         </div>
 
         {discoverResults.length > 0 && (
-          <div className="pt-3 border-t border-[#0E4B4B]/10 space-y-2">
+          <div className="pt-3 border-t border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-[#0E4B4B]">نتائج الاكتشاف من الدليل الألماني:</p>
+              <p className="text-xs font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">نتائج الاكتشاف من الدليل الألماني:</p>
               <button
                 type="button"
                 onClick={() => setDiscoverResults([])}
@@ -421,7 +421,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                   key={dr.id}
                   type="button"
                   onClick={() => void handleOpenDiscovered(dr)}
-                  className="p-2.5 rounded-xl bg-[#F7F3EA] hover:bg-[#EFE8D8] flex items-center gap-3 text-start cursor-pointer"
+                  className="p-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] flex items-center gap-3 text-start cursor-pointer"
                 >
                   {dr.coverUrl && (
                     <img
@@ -432,13 +432,13 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                     />
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-semibold text-[#1A2421] truncate font-german" dir="ltr">
+                    <p className="text-xs font-semibold text-[#1A2421] dark:text-[#F4EFE3] truncate font-german" dir="ltr">
                       {dr.title}
                     </p>
-                    <p className="text-[11px] text-[#52615D] truncate">{dr.publisher}</p>
+                    <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] truncate">{dr.publisher}</p>
                   </div>
                   {loadingDiscoveredId === dr.id && (
-                    <Loader2 className="w-4 h-4 animate-spin text-[#0E4B4B]" />
+                    <Loader2 className="w-4 h-4 animate-spin text-[#0E4B4B] dark:text-[#7FF9EB]" />
                   )}
                 </button>
               ))}
@@ -451,7 +451,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
       {loading && shows.length === 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {Array.from({ length: 9 }).map((_, idx) => (
-            <div key={idx} className="h-44 rounded-2xl bg-white/70 animate-pulse" />
+            <div key={idx} className="h-44 rounded-2xl bg-white/70 dark:bg-[#072B26]/65 animate-pulse" />
           ))}
         </div>
       ) : (
@@ -472,11 +472,11 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                       alt={show.title}
                       referrerPolicy="no-referrer"
                       loading="lazy"
-                      className="w-20 h-20 rounded-xl object-cover shrink-0 border border-[#0E4B4B]/10 bg-[#EFE8D8]"
+                      className="w-20 h-20 rounded-xl object-cover shrink-0 border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 bg-[#EFE8D8]"
                     />
                   ) : (
-                    <div className="w-20 h-20 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/10 flex items-center justify-center shrink-0">
-                      <Headphones className="w-7 h-7 text-[#0E4B4B]" />
+                    <div className="w-20 h-20 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 flex items-center justify-center shrink-0">
+                      <Headphones className="w-7 h-7 text-[#0E4B4B] dark:text-[#7FF9EB]" />
                     </div>
                   )}
 
@@ -484,7 +484,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                     <div className="flex items-start justify-between gap-1">
                       <h3
                         onClick={() => setSelectedShow(show)}
-                        className="text-base font-semibold text-[#1A2421] line-clamp-2 cursor-pointer hover:text-[#0E4B4B] font-german"
+                        className="text-base font-semibold text-[#1A2421] dark:text-[#F4EFE3] line-clamp-2 cursor-pointer hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB] font-german"
                         dir="ltr"
                       >
                         {show.title}
@@ -493,26 +493,26 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                         type="button"
                         onClick={() => toggleFavorite({ kind: 'podcasts', item: show })}
                         className={`p-1 rounded-lg cursor-pointer shrink-0 ${
-                          isFav ? 'text-[#D85A40]' : 'text-[#52615D]'
+                          isFav ? 'text-[#D85A40]' : 'text-[#52615D] dark:text-[#9EC5BE]'
                         }`}
                       >
                         <Heart className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
                       </button>
                     </div>
-                    <p className="text-xs text-[#52615D] mt-0.5 truncate">{show.publisher}</p>
-                    <p className="text-xs text-[#52615D] line-clamp-2 mt-1.5">
+                    <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] mt-0.5 truncate">{show.publisher}</p>
+                    <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] line-clamp-2 mt-1.5">
                       {lang === 'de' ? show.descriptionDe : show.descriptionAr}
                     </p>
                   </div>
                 </div>
 
                 {latestEp && (
-                  <div className="bg-[#FAF7F0] rounded-xl p-3 border border-[#0E4B4B]/8 text-xs space-y-1">
-                    <p className="text-[11px] text-[#52615D] font-mono-num">
+                  <div className="bg-[#FAF7F0] dark:bg-[#05231F] rounded-xl p-3 border border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24 text-xs space-y-1">
+                    <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] font-mono-num">
                       أحدث حلقة · {new Date(latestEp.publishedAt).toLocaleDateString('de-DE')}
                       {latestEp.duration ? ` · ${latestEp.duration}` : ''}
                     </p>
-                    <p className="font-medium text-[#1A2421] line-clamp-1 font-german" dir="ltr">
+                    <p className="font-medium text-[#1A2421] dark:text-[#F4EFE3] line-clamp-1 font-german" dir="ltr">
                       {latestEp.title}
                     </p>
                   </div>

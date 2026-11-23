@@ -30,7 +30,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
         className={
           variant === 'landing'
             ? 'px-4 py-2.5 rounded-xl bg-white/12 hover:bg-white/20 text-[#F7F3EA] border border-[#D4AF37]/45 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 cursor-pointer transition-colors backdrop-blur-sm'
-            : 'px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE8D8] text-[#093D38] border border-[#C8962E]/35 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0'
+            : 'px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#FAF7F0] dark:bg-[#08302B] hover:bg-[#EFE8D8] dark:hover:bg-[#0D4A42] text-[#093D38] dark:text-[#F4EFE3] border border-[#C8962E]/35 dark:border-[#3EF2DF]/30 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0'
         }
       >
         <Download className="w-3.5 h-3.5 text-[#C8962E]" />
@@ -48,7 +48,7 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
           className={
             variant === 'landing'
               ? 'px-4 py-2.5 rounded-xl bg-white/12 hover:bg-white/20 text-[#F7F3EA] border border-[#D4AF37]/45 text-xs sm:text-sm font-semibold inline-flex items-center gap-2 cursor-pointer transition-colors backdrop-blur-sm'
-              : 'px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#FAF7F0] hover:bg-[#EFE8D8] text-[#093D38] border border-[#C8962E]/35 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0'
+              : 'px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#FAF7F0] dark:bg-[#08302B] hover:bg-[#EFE8D8] dark:hover:bg-[#0D4A42] text-[#093D38] dark:text-[#F4EFE3] border border-[#C8962E]/35 dark:border-[#3EF2DF]/30 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0'
           }
         >
           <Smartphone className="w-3.5 h-3.5 text-[#C8962E]" />
@@ -57,9 +57,9 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
 
         {showIOSGuide && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-sm p-4">
-            <div className="w-full max-w-sm rounded-2xl bg-[#FAF7F0] border border-[#0E4B4B]/20 p-6 shadow-2xl text-[#1A2421] space-y-4">
+            <div className="w-full max-w-sm rounded-2xl bg-[#FAF7F0] dark:bg-[#072B26] border border-[#0E4B4B]/20 dark:border-[#3EF2DF]/28 p-6 shadow-2xl text-[#1A2421] dark:text-[#F4EFE3] space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-editorial font-bold text-[#093D38]">
+                <h3 className="text-base font-editorial font-bold text-[#093D38] dark:text-[#E8C35A]">
                   {lang === 'ar'
                     ? 'تثبيت DeutschFlow على iPhone / iPad'
                     : 'Install DeutschFlow on iPhone / iPad'}
@@ -67,12 +67,12 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowIOSGuide(false)}
-                  className="p-1.5 rounded-lg hover:bg-[#EFE8D8] cursor-pointer"
+                  className="p-1.5 rounded-lg hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-sm text-[#52615D] leading-relaxed">
+              <p className="text-sm text-[#52615D] dark:text-[#9EC5BE] leading-relaxed">
                 {lang === 'ar' ? (
                   <>
                     1. اضغط على زر <strong>المشاركة (Share)</strong> في شريط Safari.

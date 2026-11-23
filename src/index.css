@@ -1,9 +1,11 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  color-scheme: light;
   --df-emerald: #093d38;
   --df-petrol: #0d4a42;
-  --df-petrol-dark: #052522;
+  --df-petrol-dark: #041b18;
   --df-petrol-soft: rgba(13, 74, 66, 0.08);
   --df-gold: #c8962e;
   --df-gold-bright: #e8c35a;
@@ -14,9 +16,35 @@
   --df-cream-deep: #efe8d8;
   --df-ivory: #faf7f0;
   --df-surface: #ffffff;
+  --df-surface-elevated: rgba(255, 255, 255, 0.96);
   --df-ink: #172320;
+  --df-ink-strong: #093d38;
   --df-ink-muted: #52615d;
-  --df-border: rgba(13, 74, 66, 0.12);
+  --df-border: rgba(13, 74, 66, 0.14);
+  --df-glow-border: rgba(13, 74, 66, 0.22);
+  --df-card-shadow: 0 4px 16px rgba(9, 61, 56, 0.06), 0 1px 3px rgba(9, 61, 56, 0.04);
+  --df-card-shadow-hover: 0 16px 32px rgba(9, 61, 56, 0.11), 0 4px 12px rgba(200, 150, 46, 0.1);
+}
+
+.dark {
+  color-scheme: dark;
+  --df-cream: #041b18;
+  --df-cream-deep: #072925;
+  --df-ivory: #062420;
+  --df-surface: rgba(7, 44, 39, 0.82);
+  --df-surface-elevated: rgba(9, 53, 47, 0.94);
+  --df-ink: #f4efe3;
+  --df-ink-strong: #ffffff;
+  --df-ink-muted: #9fc5be;
+  --df-border: rgba(62, 242, 223, 0.24);
+  --df-glow-border: rgba(62, 242, 223, 0.45);
+  --df-card-shadow:
+    inset 0 1px 0 rgba(168, 255, 244, 0.18),
+    0 12px 28px rgba(0, 0, 0, 0.36);
+  --df-card-shadow-hover:
+    inset 0 1px 0 rgba(168, 255, 244, 0.3),
+    0 18px 36px rgba(0, 0, 0, 0.48),
+    0 0 22px rgba(62, 242, 223, 0.16);
 }
 
 html {
@@ -33,6 +61,15 @@ body {
   background-color: var(--df-cream);
   color: var(--df-ink);
   overflow-x: clip;
+  transition: background-color 220ms ease, color 220ms ease;
+}
+
+.dark body {
+  background-image:
+    radial-gradient(900px 520px at 50% -120px, rgba(24, 154, 138, 0.26), transparent 68%),
+    radial-gradient(640px 440px at 85% 32%, rgba(20, 128, 114, 0.14), transparent 70%),
+    radial-gradient(600px 420px at 15% 75%, rgba(200, 150, 46, 0.08), transparent 72%);
+  background-attachment: fixed;
 }
 
 .font-editorial {
@@ -50,29 +87,82 @@ body {
 
 /* Smooth focus visibility */
 :focus-visible {
-  outline: 2px solid var(--df-petrol);
+  outline: 2px solid var(--df-gold-bright);
   outline-offset: 2px;
 }
 
-/* Editorial card with refined 3D glass depth */
+/* Editorial / Glassmorphic Card */
 .df-card {
   background-color: var(--df-surface);
   border: 1px solid var(--df-border);
-  box-shadow:
-    0 2px 10px rgba(9, 61, 56, 0.04),
-    0 1px 2px rgba(9, 61, 56, 0.03);
+  box-shadow: var(--df-card-shadow);
+  backdrop-filter: blur(12px);
   transition:
     transform 190ms cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 190ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 190ms cubic-bezier(0.16, 1, 0.3, 1);
+    border-color 190ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 200ms ease;
 }
 
 .df-card-hover:hover {
   transform: translateY(-3px);
+  box-shadow: var(--df-card-shadow-hover);
+  border-color: var(--df-glow-border);
+}
+
+/* Official Reference Turquoise Glass Card for Home Universe Grid */
+.df-module-card {
+  position: relative;
+  background: linear-gradient(170deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 243, 234, 0.92) 100%);
+  border: 1px solid rgba(13, 74, 66, 0.16);
   box-shadow:
-    0 14px 30px rgba(9, 61, 56, 0.09),
-    0 4px 10px rgba(200, 150, 46, 0.08);
-  border-color: rgba(13, 74, 66, 0.28);
+    0 6px 20px rgba(9, 61, 56, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  transition:
+    transform 210ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 210ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 210ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dark .df-module-card {
+  background: linear-gradient(175deg, rgba(13, 74, 66, 0.66) 0%, rgba(4, 29, 26, 0.9) 100%);
+  border: 1px solid rgba(72, 236, 218, 0.36);
+  box-shadow:
+    inset 0 1px 1px rgba(186, 255, 247, 0.25),
+    inset 0 -10px 24px rgba(2, 18, 16, 0.45),
+    0 12px 28px rgba(0, 0, 0, 0.38);
+}
+
+.df-module-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(200, 150, 46, 0.55);
+  box-shadow:
+    0 16px 32px rgba(9, 61, 56, 0.14),
+    0 0 0 1px rgba(200, 150, 46, 0.2);
+}
+
+.dark .df-module-card:hover {
+  border-color: rgba(110, 247, 232, 0.68);
+  box-shadow:
+    inset 0 1px 1px rgba(210, 255, 249, 0.38),
+    0 18px 36px rgba(0, 0, 0, 0.52),
+    0 0 24px rgba(62, 242, 223, 0.22);
+}
+
+/* Signature Floating Bottom Navigation Bar */
+.df-bottom-nav {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(13, 74, 66, 0.16);
+  box-shadow: 0 12px 32px rgba(9, 61, 56, 0.14);
+  backdrop-filter: blur(18px);
+}
+
+.dark .df-bottom-nav {
+  background: linear-gradient(180deg, rgba(10, 56, 50, 0.88) 0%, rgba(4, 27, 24, 0.95) 100%);
+  border: 1px solid rgba(72, 236, 218, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(186, 255, 247, 0.24),
+    0 16px 40px rgba(0, 0, 0, 0.55);
 }
 
 /* 3D Glassmorphic / Holographic Icon Stage */
@@ -95,6 +185,19 @@ body {
     border-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.dark .df-icon-stage {
+  background: radial-gradient(
+    circle at 32% 28%,
+    rgba(62, 242, 223, 0.22) 0%,
+    rgba(12, 68, 61, 0.5) 55%,
+    rgba(4, 25, 22, 0.85) 100%
+  );
+  border-color: rgba(72, 236, 218, 0.34);
+  box-shadow:
+    inset 0 1px 1px rgba(200, 255, 248, 0.3),
+    0 8px 18px rgba(0, 0, 0, 0.35);
+}
+
 .group:hover .df-icon-stage {
   transform: translateY(-2px) scale(1.06);
   border-color: rgba(200, 150, 46, 0.58);
@@ -111,6 +214,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .df-card,
   .df-card-hover:hover,
+  .df-module-card,
+  .df-module-card:hover,
   .df-icon-stage,
   .group:hover .df-icon-stage,
   .group:active .df-icon-stage {

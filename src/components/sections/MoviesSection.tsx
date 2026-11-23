@@ -18,13 +18,13 @@ interface MoviesSectionProps {
 function getAccessLabel(access: PlatformAccessType): { label: string; colorClass: string } {
   switch (access) {
     case 'free':
-      return { label: 'مجاني بالكامل', colorClass: 'text-[#0E4B4B]' };
+      return { label: 'مجاني بالكامل', colorClass: 'text-[#0E4B4B] dark:text-[#7FF9EB]' };
     case 'free_restricted':
       return { label: 'مجاني (قد يخضع لقيود جغرافية لبعض الأعمال)', colorClass: 'text-[#B68934]' };
     case 'account_required':
       return { label: 'يحتاج حساباً (مجاني جزئياً / اشتراك)', colorClass: 'text-[#D85A40]' };
     case 'subscription':
-      return { label: 'اشتراك مدفوع / تأجير', colorClass: 'text-[#52615D]' };
+      return { label: 'اشتراك مدفوع / تأجير', colorClass: 'text-[#52615D] dark:text-[#9EC5BE]' };
   }
 }
 
@@ -86,9 +86,9 @@ export const MoviesSection: React.FC<MoviesSectionProps> = ({ lang, onBack }) =>
   return (
     <SectionShell sectionId="movies" lang={lang} onBack={onBack} refreshing={loading}>
       {/* Transparency & Filters */}
-      <div className="bg-white rounded-2xl border border-[#0E4B4B]/12 p-4 sm:p-5 mb-6 space-y-4">
-        <div className="flex items-start gap-2.5 text-xs text-[#52615D] bg-[#F7F3EA] p-3 rounded-xl">
-          <ShieldCheck className="w-4 h-4 text-[#0E4B4B] shrink-0 mt-0.5" />
+      <div className="bg-white dark:bg-[#072B26] rounded-2xl border border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 p-4 sm:p-5 mb-6 space-y-4">
+        <div className="flex items-start gap-2.5 text-xs text-[#52615D] dark:text-[#9EC5BE] bg-[#F7F3EA] dark:bg-[#041B18] p-3 rounded-xl">
+          <ShieldCheck className="w-4 h-4 text-[#0E4B4B] dark:text-[#7FF9EB] shrink-0 mt-0.5" />
           <span>
             توضيح الشفافية: منصات البث الألمانية تحمي حقوق البث عبر سياسات DRM ومنع التضمين؛ لذلك نعرض هنا التصنيف الدقيق لكل منصة وعمل مع روابط المشاهدة الرسمية المباشرة دون تجاوز القيود.
           </span>
@@ -96,13 +96,13 @@ export const MoviesSection: React.FC<MoviesSectionProps> = ({ lang, onBack }) =>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#52615D] absolute top-1/2 -translate-y-1/2 start-3" />
+            <Search className="w-4 h-4 text-[#52615D] dark:text-[#9EC5BE] absolute top-1/2 -translate-y-1/2 start-3" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="ابحث عن مسلسل، فيلم، أو منصة بث ألمانية (ARD, ZDF, Dark, Tatort, Babylon Berlin)..."
-              className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/15 text-sm"
+              className="w-full ps-9 pe-3 py-2.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 text-sm"
             />
           </div>
 
@@ -119,7 +119,7 @@ export const MoviesSection: React.FC<MoviesSectionProps> = ({ lang, onBack }) =>
                 className={`px-3 py-2 rounded-xl text-xs font-medium whitespace-nowrap shrink-0 cursor-pointer ${
                   filterAccess === f.id
                     ? 'bg-[#0E4B4B] text-white'
-                    : 'bg-[#F7F3EA] text-[#1A2421] hover:bg-[#EFE8D8]'
+                    : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#1A2421] dark:text-[#F4EFE3] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35]'
                 }`}
               >
                 {f.label}
@@ -131,7 +131,7 @@ export const MoviesSection: React.FC<MoviesSectionProps> = ({ lang, onBack }) =>
 
       {/* Curated German Series & Films */}
       <div className="mb-10">
-        <h2 className="text-base font-semibold text-[#0E4B4B] mb-4">
+        <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-4">
           أعمال ألمانية مختارة لتطوير اللغة والثقافة ({filteredTitles.length})
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -147,14 +147,14 @@ export const MoviesSection: React.FC<MoviesSectionProps> = ({ lang, onBack }) =>
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-10 h-10 rounded-xl bg-[#F7F3EA] border border-[#0E4B4B]/10 flex items-center justify-center text-[#D85A40] shrink-0">
+                      <div className="w-10 h-10 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 flex items-center justify-center text-[#D85A40] shrink-0">
                         <Film className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-base font-semibold text-[#1A2421] font-german" dir="ltr">
+                        <h3 className="text-base font-semibold text-[#1A2421] dark:text-[#F4EFE3] font-german" dir="ltr">
                           {item.title}
                         </h3>
-                        <p className="text-xs text-[#52615D]">
+                        <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">
                           {item.genre} · {item.year}
                           {item.cefrHint ? ` · ${item.cefrHint}` : ''}
                         </p>
@@ -166,23 +166,23 @@ export const MoviesSection: React.FC<MoviesSectionProps> = ({ lang, onBack }) =>
                       onClick={() => toggleFavorite({ kind: 'movies', item })}
                       aria-label="Favorite movie"
                       className={`p-1.5 rounded-lg cursor-pointer ${
-                        fav ? 'text-[#D85A40]' : 'text-[#52615D] hover:text-[#0E4B4B]'
+                        fav ? 'text-[#D85A40]' : 'text-[#52615D] dark:text-[#9EC5BE] hover:text-[#0E4B4B] dark:hover:text-[#E8C35A] dark:text-[#7FF9EB]'
                       }`}
                     >
                       <Heart className={`w-4 h-4 ${fav ? 'fill-current' : ''}`} />
                     </button>
                   </div>
 
-                  <p className="text-xs text-[#52615D] leading-relaxed mb-2">
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] leading-relaxed mb-2">
                     {lang === 'de' ? item.descriptionDe : item.descriptionAr}
                   </p>
 
                   <div className="text-[11px] flex flex-wrap items-center gap-1.5">
-                    <span className="font-semibold text-[#0E4B4B]">{item.platformName}</span>
+                    <span className="font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">{item.platformName}</span>
                     <span aria-hidden="true">·</span>
                     <span className={`font-medium ${access.colorClass}`}>{access.label}</span>
                     <span aria-hidden="true">·</span>
-                    <span className="text-[#52615D]">مشاهدة خارجية رسمية</span>
+                    <span className="text-[#52615D] dark:text-[#9EC5BE]">مشاهدة خارجية رسمية</span>
                   </div>
                 </div>
 
@@ -211,7 +211,7 @@ export const MoviesSection: React.FC<MoviesSectionProps> = ({ lang, onBack }) =>
 
       {/* Platforms Directory */}
       <div>
-        <h2 className="text-base font-semibold text-[#0E4B4B] mb-4">
+        <h2 className="text-base font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-4">
           دليل منصات البث الألمانية ({filteredPlatforms.length})
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -221,31 +221,31 @@ export const MoviesSection: React.FC<MoviesSectionProps> = ({ lang, onBack }) =>
               <article key={pl.id} className="df-card rounded-2xl p-5 flex flex-col justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-                    <h3 className="text-base font-semibold text-[#1A2421] font-german" dir="ltr">
+                    <h3 className="text-base font-semibold text-[#1A2421] dark:text-[#F4EFE3] font-german" dir="ltr">
                       {pl.name}
                     </h3>
                     <span className={`text-xs font-semibold ${access.colorClass}`}>
                       {access.label}
                     </span>
                   </div>
-                  <p className="text-xs text-[#52615D] leading-relaxed mb-2">
+                  <p className="text-xs text-[#52615D] dark:text-[#9EC5BE] leading-relaxed mb-2">
                     {lang === 'de' ? pl.descriptionDe : pl.descriptionAr}
                   </p>
-                  <p className="text-[11px] text-[#52615D]">
+                  <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">
                     {lang === 'de' ? pl.regionNoteDe : pl.regionNoteAr}
                   </p>
-                  <p className="text-[11px] text-[#0E4B4B] mt-2 font-german" dir="ltr">
+                  <p className="text-[11px] text-[#0E4B4B] dark:text-[#7FF9EB] mt-2 font-german" dir="ltr">
                     Highlights: {pl.highlights.join(' · ')}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-[#0E4B4B]/8">
-                  <span className="text-[11px] text-[#52615D]">مشاهدة خارجية (الموقع الرسمي)</span>
+                <div className="flex items-center justify-between pt-2 border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24">
+                  <span className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">مشاهدة خارجية (الموقع الرسمي)</span>
                   <a
                     href={pl.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3.5 py-1.5 rounded-xl bg-[#F7F3EA] text-[#0E4B4B] hover:bg-[#EFE8D8] text-xs font-semibold inline-flex items-center gap-1.5"
+                    className="px-3.5 py-1.5 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#EFE8D8] dark:hover:bg-[#0B3C35] text-xs font-semibold inline-flex items-center gap-1.5"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>زيارة المنصة</span>

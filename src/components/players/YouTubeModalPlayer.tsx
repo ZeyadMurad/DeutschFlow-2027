@@ -73,7 +73,7 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
       aria-modal="true"
       aria-label={video.title}
     >
-      <div className="bg-[#FAF7F0] text-[#1A2421] w-full max-w-5xl rounded-2xl border border-[#0E4B4B]/20 shadow-2xl overflow-hidden my-auto">
+      <div className="bg-[#FAF7F0] dark:bg-[#05231F] text-[#1A2421] dark:text-[#F4EFE3] w-full max-w-5xl rounded-2xl border border-[#0E4B4B]/20 dark:border-[#3EF2DF]/24 shadow-2xl overflow-hidden my-auto">
         {/* Top bar */}
         <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-[#0E4B4B] text-[#F7F3EA]">
           <div className="min-w-0">
@@ -128,9 +128,9 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
             </div>
 
             {/* Action strip below video */}
-            <div className="bg-white p-4 sm:p-5 border-t border-[#0E4B4B]/10">
+            <div className="bg-white dark:bg-[#072B26] p-4 sm:p-5 border-t border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24">
               <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                <div className="text-xs text-[#52615D]">
+                <div className="text-xs text-[#52615D] dark:text-[#9EC5BE]">
                   <span>{video.channelName}</span>
                   <span aria-hidden="true"> · </span>
                   <span className="font-mono-num">
@@ -139,7 +139,7 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
                   {video.cefrLevel && (
                     <>
                       <span aria-hidden="true"> · </span>
-                      <span className="font-semibold text-[#0E4B4B]">{video.cefrLevel}</span>
+                      <span className="font-semibold text-[#0E4B4B] dark:text-[#7FF9EB]">{video.cefrLevel}</span>
                     </>
                   )}
                 </div>
@@ -151,7 +151,7 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 border cursor-pointer ${
                       isFav
                         ? 'bg-[#D85A40] text-white border-[#D85A40]'
-                        : 'bg-[#F7F3EA] text-[#0E4B4B] border-[#0E4B4B]/15 hover:border-[#0E4B4B]/35'
+                        : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 hover:border-[#0E4B4B]/35'
                     }`}
                   >
                     <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
@@ -164,7 +164,7 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 border cursor-pointer ${
                       isWatchLater
                         ? 'bg-[#0E4B4B] text-white border-[#0E4B4B]'
-                        : 'bg-[#F7F3EA] text-[#0E4B4B] border-[#0E4B4B]/15 hover:border-[#0E4B4B]/35'
+                        : 'bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] border-[#0E4B4B]/15 dark:border-[#3EF2DF]/24 hover:border-[#0E4B4B]/35'
                     }`}
                   >
                     <BookmarkPlus className="w-3.5 h-3.5" />
@@ -175,7 +175,7 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
                     href={video.watchUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0E4B4B]/8 text-[#0E4B4B] hover:bg-[#0E4B4B]/15 inline-flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#0E4B4B]/8 dark:bg-[#3EF2DF]/12 text-[#0E4B4B] dark:text-[#7FF9EB] hover:bg-[#0E4B4B]/15 inline-flex items-center gap-1.5"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     فتح في YouTube
@@ -185,7 +185,7 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
 
               {video.description && (
                 <p
-                  className="text-sm text-[#52615D] leading-relaxed font-german whitespace-pre-line max-h-28 overflow-y-auto"
+                  className="text-sm text-[#52615D] dark:text-[#9EC5BE] leading-relaxed font-german whitespace-pre-line max-h-28 overflow-y-auto"
                   dir="ltr"
                   lang="de"
                 >
@@ -196,12 +196,12 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
           </div>
 
           {/* Suggested videos from channel */}
-          <div className="border-t lg:border-t-0 lg:border-s border-[#0E4B4B]/12 bg-[#FAF7F0] p-4 max-h-[520px] overflow-y-auto">
-            <h4 className="text-sm font-semibold text-[#0E4B4B] mb-3">
+          <div className="border-t lg:border-t-0 lg:border-s border-[#0E4B4B]/12 dark:border-[#3EF2DF]/24 bg-[#FAF7F0] dark:bg-[#05231F] p-4 max-h-[520px] overflow-y-auto">
+            <h4 className="text-sm font-semibold text-[#0E4B4B] dark:text-[#7FF9EB] mb-3">
               مقاطع مقترحة من {video.channelName}
             </h4>
             {relatedVideos.length === 0 ? (
-              <p className="text-xs text-[#52615D]">لا توجد مقاطع إضافية محمّلة من هذه القناة حالياً.</p>
+              <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">لا توجد مقاطع إضافية محمّلة من هذه القناة حالياً.</p>
             ) : (
               <div className="space-y-2.5">
                 {relatedVideos
@@ -212,7 +212,7 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
                       key={rv.id}
                       type="button"
                       onClick={() => onSelectRelated?.(rv)}
-                      className="w-full text-start flex gap-2.5 p-2 rounded-xl bg-white border border-[#0E4B4B]/10 hover:border-[#0E4B4B]/30 transition-colors cursor-pointer"
+                      className="w-full text-start flex gap-2.5 p-2 rounded-xl bg-white dark:bg-[#072B26] border border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 hover:border-[#0E4B4B]/30 transition-colors cursor-pointer"
                     >
                       <img
                         src={rv.thumbnailUrl}
@@ -223,12 +223,12 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
                       />
                       <div className="min-w-0 flex-1">
                         <p
-                          className="text-xs font-medium text-[#1A2421] line-clamp-2 font-german"
+                          className="text-xs font-medium text-[#1A2421] dark:text-[#F4EFE3] line-clamp-2 font-german"
                           dir="ltr"
                         >
                           {rv.title}
                         </p>
-                        <p className="text-[11px] text-[#52615D] mt-1 font-mono-num">
+                        <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE] mt-1 font-mono-num">
                           {new Date(rv.publishedAt).toLocaleDateString('de-DE')}
                         </p>
                       </div>
