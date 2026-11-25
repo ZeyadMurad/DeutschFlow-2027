@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { GoogleGenAI, Type } from '@google/genai';
 import { lookupGermanDictionary } from './dictionary.js';
+import { buildLocalLesson, evaluateWritingLocally } from './localLessonEngine.js';
 import type {
   CEFRLevel,
   LearningContentInput,
@@ -15,6 +16,10 @@ import type {
 const LESSON_CACHE = new Map<string, LearningLesson>();
 const SENTENCE_CACHE = new Map<string, SentenceAnalysisResult>();
 const RATE_LIMIT_BUCKETS = new Map<string, { count: number; windowStart: number }>();
+
+// Gemini model is env-configurable so the deployment can switch/upgrade the
+// model without a code change (falls back to the original default).
+const GEMINI_MODEL = process.env.GEMINI_MODEL?.trim() || 'gemini-4-hydrogen';
 
 const ENGINE_TELEMETRY = {
   totalLessonsGenerated: 0,
@@ -98,6 +103,15 @@ function difficultyInstruction(diff: LearningDifficulty, targetCefr?: CEFRLevel)
   return `Keep the original source difficulty and natural journalism/media register (${targetCefr || 'B1'}), explaining nuances clearly for Arabic-speaking learners.`;
 }
 
+// Thrown when the Gemini client is not configured — caught by the caller to
+// fall back to the deterministic local lesson engine instead of failing.
+class GeminiUnavailableError extends Error {
+  constructor() {
+    super('GEMINI_API_KEY غير مضبوط على الخادم');
+    this.name = 'GeminiUnavailableError';
+  }
+}
+
 export async function generateLearningLesson(
   input: LearningContentInput,
   rateKey: string
@@ -131,14 +145,6 @@ export async function generateLearningLesson(
   }
 
   const ai = getGeminiClient();
-  if (!ai) {
-    return {
-      ok: false,
-      status: 503,
-      error:
-        'خدمة التحليل الذكي للمحتوى غير مفعّلة على الخادم حالياً (GEMINI_API_KEY غير مضبوط). يمكنك فتح المحتوى والنقر على الكلمات للترجمة والحفظ في المعجم.',
-    };
-  }
 
   const isSparseSource = cleanText.length < 140;
   const isAudioVideoWithoutTranscript =
@@ -188,9 +194,10 @@ Produce JSON matching the schema with:
   ENGINE_TELEMETRY.aiRequestsCount += 1;
 
   try {
+    if (!ai) throw new GeminiUnavailableError();
     const response = await Promise.race([
       ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -517,12 +524,28 @@ Produce JSON matching the schema with:
 
     return { ok: true, lesson };
   } catch (err) {
-    ENGINE_TELEMETRY.aiErrorsCount += 1;
-    const msg = err instanceof Error ? err.message : 'Learning engine failed';
+    if (!(err instanceof GeminiUnavailableError)) {
+      ENGINE_TELEMETRY.aiErrorsCount += 1;
+    }
+
+    // Gemini غير مفعّل أو فشل → الدرس المدمج الحتمي بنفس المخطط، مبنياً حصراً
+    // على النص الأصلي — لا ردود فارغة ولا اختراع حقائق.
+    const localLesson = await buildLocalLesson(input, hash);
+    if (localLesson) {
+      if (LESSON_CACHE.size >= 120) {
+        const oldestKey = LESSON_CACHE.keys().next().value;
+        if (oldestKey) LESSON_CACHE.delete(oldestKey);
+      }
+      LESSON_CACHE.set(hash, localLesson);
+      ENGINE_TELEMETRY.totalLessonsGenerated += 1;
+      return { ok: true, lesson: localLesson };
+    }
+
     return {
       ok: false,
-      status: 502,
-      error: `تعذر إكمال توليد الدرس الذكي حالياً (${msg}). يمكنك قراءة النص وحفظ المفردات مباشرة.`,
+      status: 503,
+      error:
+        'تعذر توليد الدرس التعليمي حالياً. يمكنك قراءة المحتوى والنقر على الكلمات للترجمة والحفظ في المعجم.',
     };
   }
 }
@@ -550,7 +573,7 @@ export async function analyzeGermanSentence(
     try {
       const response = await Promise.race([
         ai.models.generateContent({
-          model: 'gemini-4-hydrogen',
+          model: GEMINI_MODEL,
           contents: `Analyze this German sentence pedagogically for an Arabic learner:\n"${clean}"\nProvide: natural Arabic translation, grammar structure in Arabic, main verb(s) identified, German grammatical cases present (Nominativ/Akkusativ/Dativ/Genitiv), word order explanation (V2 / Nebensatz / Klammer), and wordByWord breakdown.`,
           config: {
             responseMimeType: 'application/json',
@@ -648,12 +671,17 @@ export async function evaluateWritingPractice(params: {
   }
 
   const ai = getGeminiClient();
+
   if (!ai) {
+    // لا مفتاح على الخادم → تقييم محلي صادق (مقاييس حتمية) بدل رفض الميزة
     return {
-      ok: false,
-      status: 503,
-      error:
-        'مصحح الكتابة بالذكاء الاصطناعي غير متاح حالياً لأن GEMINI_API_KEY غير مضبوط على الخادم. لا نقوم بإنشاء تقييمات وهمية.',
+      ok: true,
+      evaluation: evaluateWritingLocally({
+        promptDe: params.promptDe,
+        userText,
+        targetWords: params.targetWords,
+        minWords: 30,
+      }),
     };
   }
 
@@ -661,7 +689,7 @@ export async function evaluateWritingPractice(params: {
   try {
     const response = await Promise.race([
       ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
+        model: GEMINI_MODEL,
         contents: `Evaluate this German learner's writing response honestly and constructively.
 Prompt: "${params.promptDe.slice(0, 300)}"
 Target vocabulary words: ${params.targetWords.join(', ')}
@@ -711,10 +739,15 @@ Provide:
     };
   } catch {
     ENGINE_TELEMETRY.aiErrorsCount += 1;
+    // فشل مؤقت من Gemini → التقييم المحلي الصادق بدل رد فاشل
     return {
-      ok: false,
-      status: 502,
-      error: 'تعذر تقييم النص حالياً بسبب خطأ مؤقت في خدمة الذكاء الاصطناعي. يرجى إعادة المحاولة.',
+      ok: true,
+      evaluation: evaluateWritingLocally({
+        promptDe: params.promptDe,
+        userText,
+        targetWords: params.targetWords,
+        minWords: 30,
+      }),
     };
   }
 }
