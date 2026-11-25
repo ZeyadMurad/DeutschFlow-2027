@@ -75,12 +75,6 @@ function readSectionFromHash(): AppSectionId {
   return VALID_SECTIONS.has(raw) ? raw : 'home';
 }
 
-function shouldStartOnLanding(): boolean {
-  if (typeof window === 'undefined') return true;
-  const hash = window.location.hash.replace(/^#/, '');
-  return !hash;
-}
-
 const ModuleArtwork: React.FC<{
   sectionId: Exclude<AppSectionId, 'home' | 'settings'>;
   title: string;
@@ -118,7 +112,11 @@ const DeutschFlowWorkspace: React.FC = () => {
   const { data, learnerProfile, latestXpNotice, dismissXpNotice } = useUserData();
   const { lang, setLang, theme, toggleTheme, appConfig } = usePreferences();
 
-  const [showLanding, setShowLanding] = useState<boolean>(() => shouldStartOnLanding());
+  // Fingerprint-only entry: the app always starts locked on the landing page.
+  // The ONLY code that leaves it is handleContinueFromLanding, which runs
+  // after a successful biometric scan — never the URL hash, never a
+  // restored session token.
+  const [showLanding, setShowLanding] = useState(true);
   const [activeSection, setActiveSection] = useState<AppSectionId>(() => readSectionFromHash());
   const [libraryTab, setLibraryTab] = useState<LibraryTab>('vocab');
   const [searchOpen, setSearchOpen] = useState(false);
@@ -134,12 +132,12 @@ const DeutschFlowWorkspace: React.FC = () => {
     const onHashChange = () => {
       const rawHash = window.location.hash.replace(/^#/, '');
       if (!rawHash) {
+        // Back at the bare URL: the app re-locks until the next scan
         setShowLanding(true);
         return;
       }
-      const next = readSectionFromHash();
-      setActiveSection(next);
-      setShowLanding(false);
+      // A section hash only changes the destination; it never unlocks
+      setActiveSection(readSectionFromHash());
     };
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -151,7 +149,6 @@ const DeutschFlowWorkspace: React.FC = () => {
     } else if (sec === 'library') {
       setLibraryTab('vocab');
     }
-    setShowLanding(false);
     setActiveSection(sec);
     if (typeof window !== 'undefined') {
       const nextHash = sec === 'home' ? '#home' : `#${sec}`;
@@ -162,12 +159,12 @@ const DeutschFlowWorkspace: React.FC = () => {
     }
   }, []);
 
-  const handleContinueFromLanding = useCallback(
-    (targetSection?: AppSectionId) => {
-      navigateTo(targetSection || 'home');
-    },
-    [navigateTo]
-  );
+  // Called exclusively by the biometric card after the server has verified
+  // the fingerprint. A deep link (#news …) is honoured after the scan.
+  const handleContinueFromLanding = useCallback(() => {
+    setShowLanding(false);
+    navigateTo(readSectionFromHash());
+  }, [navigateTo]);
 
   const ui = UI_TEXT[lang];
   const isRtl = lang === 'ar';
@@ -182,8 +179,6 @@ const DeutschFlowWorkspace: React.FC = () => {
           theme={theme}
           onToggleTheme={toggleTheme}
           onContinue={handleContinueFromLanding}
-          savedVocabCount={data.vocabulary.length}
-          exposureMinutes={data.exposureMinutes}
           appConfig={appConfig}
         />
         <OfflineIndicator lang={lang} />

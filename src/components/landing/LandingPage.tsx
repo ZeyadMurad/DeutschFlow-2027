@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Moon, Sparkles, Sun } from 'lucide-react';
+import { Moon, Sparkles, Sun } from 'lucide-react';
 import {
   HOME_SECTION_ORDER,
   MAIN_SECTIONS,
@@ -10,6 +10,7 @@ import type { PublicAppConfig } from '../../services/api';
 import type { AppSectionId, UILanguage, UITheme } from '../../types/media';
 import { renderSectionSvgIcon } from '../icons/SectionIcons';
 import { PWAInstallButton } from '../pwa/PWAInstallButton';
+import { BiometricAuthCard } from './BiometricAuthCard';
 
 interface LandingPageProps {
   lang: UILanguage;
@@ -17,8 +18,6 @@ interface LandingPageProps {
   theme: UITheme;
   onToggleTheme: () => void;
   onContinue: (targetSection?: AppSectionId) => void;
-  savedVocabCount: number;
-  exposureMinutes: number;
   appConfig?: PublicAppConfig | null;
 }
 
@@ -55,8 +54,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   theme,
   onToggleTheme,
   onContinue,
-  savedVocabCount,
-  exposureMinutes,
   appConfig,
 }) => {
   const hiddenSet = new Set(appConfig?.hiddenModuleIds || []);
@@ -208,31 +205,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </p>
               </div>
 
-              {/* Primary & ONLY Navigation Button Into Workspace */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-1">
-                <button
-                  type="button"
-                  onClick={() => onContinue('home')}
-                  dir="ltr"
-                  className="px-7 py-4 rounded-2xl bg-gradient-to-r from-[#E8C35A] via-[#D4AF37] to-[#C8962E] text-[#052522] hover:brightness-105 active:scale-[0.99] text-base sm:text-lg font-bold shadow-[0_12px_32px_rgba(212,175,55,0.3)] inline-flex items-center gap-3 cursor-pointer transition-all"
-                >
-                  <span>Continue to DeutschFlow</span>
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-
-                {(savedVocabCount > 0 || exposureMinutes > 0) && (
-                  <div className="flex items-center gap-4 px-4 py-2.5 rounded-2xl bg-white/8 border border-white/14 text-xs text-[#CFE1DD]">
-                    <span>
-                      <strong className="text-[#E8C35A] font-mono-num text-sm">{savedVocabCount}</strong>{' '}
-                      {lang === 'de' ? 'Vokabeln' : lang === 'en' ? 'words' : 'كلمة محفوظة'}
-                    </span>
-                    <span className="w-px h-4 bg-white/20" />
-                    <span>
-                      <strong className="text-white font-mono-num text-sm">{Math.round(exposureMinutes)}</strong>{' '}
-                      {lang === 'de' ? 'Min.' : lang === 'en' ? 'min' : 'دقيقة'}
-                    </span>
-                  </div>
-                )}
+              {/* Fingerprint (WebAuthn) biometric gate — the ONLY way into the
+                  workspace. No plain "continue" button exists on purpose. */}
+              <div className="max-w-xl mx-auto lg:mx-0 pt-2">
+                <BiometricAuthCard lang={lang} onAuthenticated={() => onContinue()} />
               </div>
             </div>
           </div>

@@ -20,6 +20,58 @@ import {
 
 const FINGERPRINT_HINT_KEY = 'df_biometric_hint_v1';
 
+/**
+ * The device's biometric prompt did not complete. `rejected` covers an
+ * unrecognised finger, a dismissed prompt, the device's own timeout and
+ * "no matching passkey on this device" — the browser reports them all as
+ * the same NotAllowedError, so they cannot be told apart here.
+ * `unavailable` means this origin may not use WebAuthn at all.
+ * `timeout` means the device never answered within CEREMONY_TIMEOUT_MS.
+ * Errors reported by the server are thrown unchanged (BiometricApiError,
+ * carrying a `code` the UI can branch on).
+ */
+export type BiometricCeremonyFailReason = 'rejected' | 'unavailable' | 'timeout';
+
+/** Upper bound for the device prompt: a device that never answers must not
+ *  leave the dialog in "scanning" forever. */
+const CEREMONY_TIMEOUT_MS = 90_000;
+
+export class BiometricCeremonyError extends Error {
+  readonly reason: BiometricCeremonyFailReason;
+
+  constructor(reason: BiometricCeremonyFailReason) {
+    super(reason);
+    this.name = 'BiometricCeremonyError';
+    this.reason = reason;
+  }
+}
+
+function ceremonyFailReason(err: unknown): BiometricCeremonyFailReason {
+  if (err instanceof BiometricCeremonyError) return err.reason;
+  if (err instanceof Error && (err.name === 'SecurityError' || err.name === 'NotSupportedError')) {
+    return 'unavailable';
+  }
+  return 'rejected';
+}
+
+/** The browser offers no way to cancel a pending WebAuthn prompt, so a late
+ *  answer is simply left to resolve on its own; the caller has already moved on. */
+function withCeremonyTimeout<T>(ceremony: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new BiometricCeremonyError('timeout')), CEREMONY_TIMEOUT_MS);
+    ceremony.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err: unknown) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
+
 interface AuthContextValue {
   /** null = signed out / unknown yet */
   session: BiometricAuthSession | null;
@@ -49,15 +101,20 @@ function readLocalHint(): boolean {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<BiometricAuthSession | null>(null);
   const [initializing, setInitializing] = useState(true);
-  const [biometricSupported, setBiometricSupported] = useState(false);
+  // Known synchronously at first render — the "unsupported" notice must not flash for a frame
+  const [biometricSupported, setBiometricSupported] = useState<boolean>(() => {
+    try {
+      return browserSupportsWebAuthn();
+    } catch {
+      return false;
+    }
+  });
   const [hasLocalHint, setHasLocalHint] = useState(false);
 
   useEffect(() => {
-    const supported = browserSupportsWebAuthn();
-    setBiometricSupported(supported);
     setHasLocalHint(readLocalHint());
 
-    if (!supported) {
+    if (!biometricSupported) {
       setInitializing(false);
       return;
     }
@@ -86,10 +143,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { userId: confirmedUserId, options } = await startBiometricRegistration(userId, deviceName);
     let attResp: Awaited<ReturnType<typeof startRegistration>>;
     try {
-      attResp = await startRegistration({ optionsJSON: options });
-    } catch {
-      // User cancelled the OS biometric prompt, or it failed
-      throw new Error('أُلغيت عملية البصمة أو تعذّر قراءتها. أعد المحاولة.');
+      attResp = await withCeremonyTimeout(startRegistration({ optionsJSON: options }));
+    } catch (err) {
+      throw new BiometricCeremonyError(ceremonyFailReason(err));
     }
     const { token } = await finishBiometricRegistration(
       confirmedUserId,
@@ -107,15 +163,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithFingerprint = useCallback(async () => {
-    const { options } = await startBiometricLogin();
+    const { options, requestId } = await startBiometricLogin();
     let asseResp: Awaited<ReturnType<typeof startAuthentication>>;
     try {
-      asseResp = await startAuthentication({ optionsJSON: options });
-    } catch {
-      throw new Error('أُلغيت عملية البصمة أو تعذّر قراءتها. أعد المحاولة.');
+      asseResp = await withCeremonyTimeout(startAuthentication({ optionsJSON: options }));
+    } catch (err) {
+      throw new BiometricCeremonyError(ceremonyFailReason(err));
     }
     const { token, userId, displayName } = await finishBiometricLogin(
-      asseResp as Parameters<typeof finishBiometricLogin>[0]
+      asseResp as Parameters<typeof finishBiometricLogin>[0],
+      requestId
     );
     storeAuthToken(token);
     try {

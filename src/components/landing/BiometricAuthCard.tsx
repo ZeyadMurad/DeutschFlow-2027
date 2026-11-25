@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Fingerprint, ShieldCheck } from 'lucide-react';
-import { isPlatformAuthenticatorAvailable, useAuth } from '../../context/AuthContext';
+import { BiometricCeremonyError, isPlatformAuthenticatorAvailable, useAuth } from '../../context/AuthContext';
+import { BiometricApiError } from '../../services/api';
 import type { UILanguage } from '../../types/media';
-import { FingerprintScanOverlay, type ScanPhase } from './FingerprintScanOverlay';
+import {
+  FingerprintScanOverlay,
+  failureText,
+  type ScanFailure,
+  type ScanPhase,
+} from './FingerprintScanOverlay';
 
 const TEXT = {
   ar: {
@@ -10,39 +16,48 @@ const TEXT = {
     subtitle: 'المس بصمتك للدخول — تماماً كما تفتح هاتفك',
     enrollTitle: 'تفعيل الدخول بالبصمة',
     enrollDesc:
-      'اضغط زر البصمة مرة واحدة لتفعيلها على هذا الجهاز. المس إصبعك المسجّل في هاتفك — نفس البصمة التي تفتح بها الشاشة. لاحقاً، أي إصبع غير مسجّل في هاتفك سيُرفض تلقائياً.',
+      'اضغط زر البصمة مرة واحدة لتفعيلها على هذا الجهاز، ثم أكمل طلب البصمة الذي يظهر من جهازك بالإصبع الذي تفتح به هاتفك. بعد التفعيل لا يُقبل إلا إصبع مسجّل في هذا الجهاز؛ أي إصبع آخر يرفضه جهازك نفسه.',
     enrollBtn: 'اضغط لتفعيل بصمتك',
     loginBtn: 'اضغط للدخول بالبصمة',
-    working: 'جارٍ التهيئة…',
-    unsupported: 'متصفحك أو جهازك لا يدعم الدخول بالبصمة. استخدم Chrome على أندرويد أو Safari على iPhone/Mac.',
+    working: 'جارٍ التحقق…',
+    onlyWay: 'الدخول إلى واجهة المستخدم يتم بالبصمة فقط.',
+    unsupported:
+      'متصفحك أو جهازك لا يدعم الدخول بالبصمة، ولا يمكن فتح الواجهة منه. افتح التطبيق في Chrome على أندرويد أو Safari على iPhone، مباشرة وليس من داخل تطبيق آخر، وعلى عنوان يبدأ بـ https.',
     noPlatform: 'لا يوجد قارئ بصمة متاح على هذا الجهاز.',
-    privacy: 'خصوصيتك: لا تُخزَّن صورة البصمة إطلاقاً — جهازك نفسه يتحقق منها كما يفعل عند فتح الشاشة، والخادم يحفظ مفتاحاً تشفيرياً عاماً فقط.',
+    privacy:
+      'خصوصيتك: لا تُخزَّن صورة البصمة إطلاقاً — جهازك نفسه يتحقق منها كما يفعل عند فتح الشاشة، والخادم يحفظ مفتاحاً تشفيرياً عاماً فقط.',
   },
   de: {
     title: 'Anmeldung per Fingerabdruck',
     subtitle: 'Tippe auf deinen Fingerabdruck — wie beim Entsperren deines Handys',
     enrollTitle: 'Fingerabdruck-Anmeldung aktivieren',
     enrollDesc:
-      'Tippe einmal auf die Schaltfläche, um sie auf diesem Gerät zu aktivieren. Benutze denselben Finger, mit dem du dein Handy entsperrst — nicht registrierte Finger werden automatisch abgelehnt.',
+      'Tippe einmal auf die Schaltfläche und bestätige die Abfrage deines Geräts mit dem Finger, mit dem du dein Handy entsperrenst. Danach wird nur ein auf diesem Gerät registrierter Finger akzeptiert — jeden anderen lehnt dein Gerät selbst ab.',
     enrollBtn: 'Zum Aktivieren tippen',
     loginBtn: 'Zum Anmelden tippen',
-    working: 'Wird eingerichtet…',
-    unsupported: 'Dein Browser/Gerät unterstützt keine biometrische Anmeldung. Nutze Chrome (Android) oder Safari (iPhone/Mac).',
+    working: 'Wird geprüft…',
+    onlyWay: 'Der Arbeitsbereich lässt sich nur per Fingerabdruck öffnen.',
+    unsupported:
+      'Dein Browser/Gerät unterstützt keine Fingerabdruck-Anmeldung, die Oberfläche lässt sich daraus nicht öffnen. Nutze Chrome (Android) oder Safari (iPhone) direkt — nicht innerhalb einer anderen App — und eine https-Adresse.',
     noPlatform: 'Kein Fingerabdruckleser auf diesem Gerät verfügbar.',
-    privacy: 'Privatsphäre: Das Fingerabdruck-Bild wird nie gespeichert — dein Gerät prüft es lokal wie beim Entsperren, der Server speichert nur einen öffentlichen Schlüssel.',
+    privacy:
+      'Privatsphäre: Das Fingerabdruck-Bild wird nie gespeichert — dein Gerät prüft es lokal wie beim Entsperren, der Server speichert nur einen öffentlichen Schlüssel.',
   },
   en: {
     title: 'Fingerprint Sign-In',
     subtitle: 'Tap your fingerprint to sign in — just like unlocking your phone',
     enrollTitle: 'Enable fingerprint sign-in',
     enrollDesc:
-      'Tap the button once to enable it on this device. Use the same finger you unlock your phone with — any finger not enrolled on your phone will be rejected automatically.',
+      'Tap the button once and approve your device\'s prompt with the finger you unlock your phone with. From then on only a finger enrolled on this device is accepted — your device itself rejects any other finger.',
     enrollBtn: 'Tap to enable your fingerprint',
     loginBtn: 'Tap to sign in with fingerprint',
-    working: 'Setting up…',
-    unsupported: 'Your browser/device does not support biometric sign-in. Use Chrome on Android or Safari on iPhone/Mac.',
+    working: 'Verifying…',
+    onlyWay: 'The workspace opens by fingerprint only.',
+    unsupported:
+      'Your browser/device does not support fingerprint sign-in, so the workspace cannot be opened from it. Use Chrome (Android) or Safari (iPhone) directly — not inside another app — on an https address.',
     noPlatform: 'No fingerprint reader available on this device.',
-    privacy: 'Privacy: the fingerprint image is never stored — your device verifies it locally like screen unlock, and the server keeps only a public key.',
+    privacy:
+      'Privacy: the fingerprint image is never stored — your device verifies it locally like screen unlock, and the server keeps only a public key.',
   },
 } as const;
 
@@ -52,15 +67,54 @@ interface BiometricAuthCardProps {
   onAuthenticated: () => void;
 }
 
+/** how long the green check stays visible before the workspace opens */
+const SUCCESS_HOLD_MS = 900;
+
+const ARABIC_LETTERS = /[\u0600-\u06FF]/;
+
+/** The server no longer knows this device's fingerprint → create it again. */
+function isUnknownFingerprint(err: unknown): boolean {
+  if (!(err instanceof BiometricApiError)) return false;
+  return (
+    err.code === 'NOT_ENROLLED' ||
+    err.code === 'UNKNOWN_CREDENTIAL' ||
+    (err.code === undefined && err.status === 404)
+  );
+}
+
+function describeFailure(err: unknown, lang: UILanguage): ScanFailure {
+  if (err instanceof BiometricCeremonyError) {
+    return { kind: err.reason };
+  }
+  if (err instanceof BiometricApiError) {
+    if (err.code === 'CHALLENGE_EXPIRED') return { kind: 'expired' };
+    if (err.code === 'RATE_LIMITED') return { kind: 'rateLimited' };
+    // The server checked the fingerprint and did not accept it
+    if (err.status === 401) return { kind: 'rejected' };
+    return { kind: 'server', message: lang === 'ar' ? err.message : undefined };
+  }
+  // Network failure or an unexpected error: show its text only when it is Arabic
+  const message = err instanceof Error ? err.message : '';
+  return { kind: 'server', message: lang === 'ar' && ARABIC_LETTERS.test(message) ? message : undefined };
+}
+
 export const BiometricAuthCard: React.FC<BiometricAuthCardProps> = ({ lang, onAuthenticated }) => {
   const t = TEXT[lang];
   const { session, biometricSupported, hasLocalHint, registerFingerprint, loginWithFingerprint } = useAuth();
   const [platformReady, setPlatformReady] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  /** last failed attempt; shown in the dialog, then under the button once it is closed */
+  const [failure, setFailure] = useState<ScanFailure | null>(null);
+  const [failureCount, setFailureCount] = useState(0);
 
   // Scan overlay: null = closed; phases drive the icon/check/error visuals
   const [scan, setScan] = useState<{ phase: ScanPhase; burstKey: number } | null>(null);
+
+  // Bumped on every attempt and on close: a result that arrives for an older
+  // attempt (e.g. a prompt completed after the dialog was closed) is ignored.
+  const attemptRef = useRef(0);
+  // The action a plain "retry" repeats (login when enrolled, otherwise setup)
+  const lastActionRef = useRef<'enroll' | 'login'>('enroll');
 
   React.useEffect(() => {
     if (!biometricSupported) return;
@@ -75,61 +129,88 @@ export const BiometricAuthCard: React.FC<BiometricAuthCardProps> = ({ lang, onAu
       >
         <div className="flex items-start gap-2.5">
           <ShieldCheck className="w-4 h-4 mt-0.5 shrink-0" />
-          <p>{t.unsupported}</p>
+          <div className="space-y-1.5">
+            <p>{t.unsupported}</p>
+            <p className="font-semibold">{t.onlyWay}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   const runScan = async (action: 'enroll' | 'login') => {
+    // No usable fingerprint reader on this device: say so at once instead of
+    // waiting for a device prompt that will never appear.
+    if (platformReady === false) {
+      setFailure({ kind: 'no-sensor' });
+      setFailureCount((count) => count + 1);
+      setScan({ phase: 'error', burstKey: 0 });
+      return;
+    }
+
+    const attempt = ++attemptRef.current;
+    const isCurrent = () => attemptRef.current === attempt;
+    lastActionRef.current = action;
+
     setBusy(true);
-    setError('');
+    setFailure(null);
     setScan({ phase: 'scanning', burstKey: 0 });
     try {
-      if (action === 'enroll') {
-        await registerFingerprint('', '');
+      if (action === 'login') {
+        try {
+          await loginWithFingerprint();
+        } catch (err) {
+          // The server lost its data (or never saw this device): set the
+          // fingerprint up again right away — the device still asks for it.
+          if (!isUnknownFingerprint(err)) throw err;
+          lastActionRef.current = 'enroll';
+          await registerFingerprint('', '');
+        }
       } else {
-        await loginWithFingerprint();
+        await registerFingerprint('', '');
       }
+      if (!isCurrent()) return;
+      setFailureCount(0);
       // Success: show the green check, then enter the workspace
-      setScan((prev) => (prev ? { phase: 'success', burstKey: Date.now() } : prev));
-      await new Promise((resolve) => setTimeout(resolve, 900));
+      setScan({ phase: 'success', burstKey: Date.now() });
+      await new Promise((resolve) => setTimeout(resolve, SUCCESS_HOLD_MS));
+      if (!isCurrent()) return;
       onAuthenticated();
-    } catch (e) {
-      const raw = e instanceof Error ? e.message : 'حدث خطأ غير متوقع.';
-      // Map silent failures to the "finger not recognised" retry experience
-      const msg = /أُلغيت|تعذّر قراءة|not allowed|NotAllowedError|aborted/i.test(raw)
-        ? lang === 'ar'
-          ? 'لم يتم التعرف على الإصبع. أعد المحاولة بإصبع البصمة المسجّلة.'
-          : lang === 'de'
-          ? 'Finger nicht erkannt. Erneut mit dem registrierten Finger versuchen.'
-          : 'Finger not recognised. Try again with the enrolled finger.'
-        : raw;
-      setError(msg);
+    } catch (err) {
+      if (!isCurrent()) return;
+      setFailure(describeFailure(err, lang));
+      setFailureCount((count) => count + 1);
       setScan({ phase: 'error', burstKey: 0 });
     } finally {
-      setBusy(false);
+      if (isCurrent()) setBusy(false);
     }
   };
 
-  const handleRetry = () => {
-    setError('');
+  const handleRetry = () => void runScan(lastActionRef.current);
+  const handleReenroll = () => void runScan('enroll');
+  const handleClose = () => {
+    // Invalidate the running attempt so its late result cannot reopen the dialog
+    attemptRef.current += 1;
+    setBusy(false);
     setScan(null);
-    void runScan(hasLocalHint || session ? 'login' : 'enroll');
   };
 
   const dir = lang === 'ar' ? 'rtl' : 'ltr';
   const enrolled = hasLocalHint || Boolean(session);
-  const scanPhase = scan?.phase ?? 'scanning';
+  const closedFailure = scan === null && failure ? failureText(failure, lang) : null;
 
   return (
     <>
       <FingerprintScanOverlay
         open={scan !== null}
-        phase={scanPhase}
+        phase={scan?.phase ?? 'scanning'}
         lang={lang}
         burstKey={scan?.burstKey ?? 0}
+        failure={failure}
+        failureCount={failureCount}
         onRetry={handleRetry}
+        onReenroll={handleReenroll}
+        onClose={handleClose}
       />
 
       <div
@@ -174,9 +255,12 @@ export const BiometricAuthCard: React.FC<BiometricAuthCardProps> = ({ lang, onAu
             </span>
           </button>
 
-          {error && (
-            <div className="text-xs text-[#B3261E] dark:text-[#FFB4AB] bg-[#B3261E]/8 rounded-lg px-3 py-2 leading-relaxed">
-              {error}
+          {closedFailure && (
+            <div
+              role="alert"
+              className="text-xs text-[#B3261E] dark:text-[#FFB4AB] bg-[#B3261E]/8 rounded-lg px-3 py-2 leading-relaxed"
+            >
+              <span className="font-semibold">{closedFailure.title}.</span> {closedFailure.sub}
             </div>
           )}
 

@@ -338,6 +338,9 @@ export async function handleRegistrationStart(
     attestationType: 'none',
     excludeCredentials: (existing?.credentials || []).map((c) => ({ id: c.id })),
     authenticatorSelection: {
+      // Only the device's own built-in authenticator (the phone's fingerprint
+      // sensor) — never a USB key or a passkey on another device.
+      authenticatorAttachment: 'platform',
       residentKey: 'preferred',
       userVerification: 'required', // require the biometric tap itself
     },
@@ -446,27 +449,32 @@ export async function handleAuthenticationStart(
     }
   }
   if (allCredentials.length === 0) {
-    res.status(404).json({ error: 'لا توجد بصمات مسجّلة على هذا الخادم بعد.' });
+    // code: lets the client tell "nobody enrolled" apart from other failures
+    res.status(404).json({ error: 'لا توجد بصمات مسجّلة على هذا الخادم بعد.', code: 'NOT_ENROLLED' });
     return;
   }
 
+  // Every enrolled credential is offered so no user is ever refused because
+  // of list truncation; the device only signs with the one it actually holds.
+  const allowedCredentials = allCredentials.map(({ cred }) => ({ id: cred.id }));
   const options = await generateAuthenticationOptions({
     rpID: rpID(req),
     userVerification: 'required',
-    allowCredentials: allCredentials.slice(0, 20).map(({ cred }) => ({ id: cred.id })),
+    allowCredentials: allowedCredentials,
   });
 
-  // Remember the allowed credential ids so the finish step can map back to the user
-  const challengeKey = options.challenge;
-  inMemoryChallenges.auth[challengeKey] = {
-    challenge: challengeKey,
+  // Each attempt gets its own id so the finish step checks exactly the
+  // challenge this browser answered — never an older, abandoned attempt.
+  const requestId = crypto.randomBytes(16).toString('hex');
+  inMemoryChallenges.auth[requestId] = {
+    challenge: options.challenge,
     createdAt: Date.now(),
     purpose: 'auth',
-    allowed: allCredentials.slice(0, 20).map(({ cred }) => cred.id),
+    allowed: allowedCredentials.map(({ id }) => id),
   };
 
   res.setHeader('Cache-Control', 'no-store');
-  res.json({ options });
+  res.json({ options, requestId });
 }
 
 export async function handleAuthenticationFinish(
@@ -474,23 +482,14 @@ export async function handleAuthenticationFinish(
   res: express.Response
 ): Promise<void> {
   pruneChallenges();
-  const body = (req.body || {}) as { credential?: AuthenticationResponseJSON };
+  const body = (req.body || {}) as { credential?: AuthenticationResponseJSON; requestId?: unknown };
   const credential = body.credential;
   if (!credential || typeof credential !== 'object' || typeof credential.id !== 'string') {
     res.status(400).json({ error: 'بيانات البصمة المستلمة غير مكتملة.' });
     return;
   }
 
-  // Locate the pending auth challenge that allows this credential
-  const candidates = Object.entries(inMemoryChallenges.auth).filter(([, entry]) =>
-    entry.allowed?.includes(credential.id)
-  );
-  if (candidates.length === 0) {
-    res.status(400).json({ error: 'انتهت صلاحية طلب الدخول أو البصمة غير معروفة. أعد المحاولة.' });
-    return;
-  }
-  const [challengeKey, entry] = candidates[0];
-
+  // Which enrolled user owns the credential that answered?
   const store = readStore();
   let ownerUserId: string | null = null;
   let matched: StoredCredential | null = null;
@@ -503,49 +502,69 @@ export async function handleAuthenticationFinish(
     }
   }
   if (!ownerUserId || !matched) {
-    res.status(400).json({ error: 'البصمة غير مسجّلة على هذا الخادم.' });
+    // The device holds a passkey this server no longer knows (its data was reset)
+    res.status(400).json({ error: 'البصمة غير مسجّلة على هذا الخادم.', code: 'UNKNOWN_CREDENTIAL' });
     return;
   }
 
-  try {
-    const verification = await verifyAuthenticationResponse({
-      response: credential as AuthenticationResponseJSON,
-      expectedChallenge: entry.challenge,
-      expectedOrigin: rpOrigin(req),
-      expectedRPID: rpID(req),
-      credential: {
-        id: matched.id,
-        publicKey: new Uint8Array(matched.publicKey),
-        counter: matched.counter,
-        transports: matched.transports,
-      },
-      requireUserVerification: true,
-    });
-
-    if (!verification.verified) {
-      res.status(401).json({ error: 'تعذر التحقق من البصمة. أعد المحاولة.' });
-      return;
-    }
-
-    // Update counter + last used
-    matched.counter = verification.authenticationInfo.newCounter;
-    matched.lastUsedAt = new Date().toISOString();
-    writeStore(store);
-    delete inMemoryChallenges.auth[challengeKey];
-
-    const user = store.users[ownerUserId];
-    const sessionToken = signUserSession(ownerUserId, user.displayName);
-    res.setHeader('Cache-Control', 'no-store');
-    res.json({
-      ok: true,
-      userId: ownerUserId,
-      token: sessionToken,
-      displayName: user.displayName,
-    });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'فشل التحقق من البصمة';
-    res.status(400).json({ error: `فشل التحقق من البصمة: ${msg}` });
+  // The challenge is the one issued to this attempt. A requestId that is not
+  // pending any more is an expired attempt and is refused as such; only when
+  // the client sends none at all are the other pending challenges tried.
+  const requestId = typeof body.requestId === 'string' ? body.requestId : '';
+  const own = requestId ? inMemoryChallenges.auth[requestId] : undefined;
+  const candidates: Array<[string, AuthChallenge]> = requestId
+    ? own
+      ? [[requestId, own]]
+      : []
+    : Object.entries(inMemoryChallenges.auth).filter(([, entry]) => entry.allowed?.includes(credential.id));
+  if (candidates.length === 0) {
+    // Unknown attempt, or older than CHALLENGE_TTL_MS — the user just retries
+    res.status(400).json({ error: 'انتهت صلاحية طلب الدخول. أعد المحاولة.', code: 'CHALLENGE_EXPIRED' });
+    return;
   }
+
+  for (const [challengeKey, entry] of candidates) {
+    try {
+      const verification = await verifyAuthenticationResponse({
+        response: credential as AuthenticationResponseJSON,
+        expectedChallenge: entry.challenge,
+        expectedOrigin: rpOrigin(req),
+        expectedRPID: rpID(req),
+        credential: {
+          id: matched.id,
+          publicKey: new Uint8Array(matched.publicKey),
+          counter: matched.counter,
+          transports: matched.transports,
+        },
+        requireUserVerification: true,
+      });
+
+      if (!verification.verified) {
+        continue;
+      }
+
+      // Update counter + last used
+      matched.counter = verification.authenticationInfo.newCounter;
+      matched.lastUsedAt = new Date().toISOString();
+      writeStore(store);
+      delete inMemoryChallenges.auth[challengeKey];
+
+      const user = store.users[ownerUserId];
+      const sessionToken = signUserSession(ownerUserId, user.displayName);
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({
+        ok: true,
+        userId: ownerUserId,
+        token: sessionToken,
+        displayName: user.displayName,
+      });
+      return;
+    } catch {
+      // This pending challenge is not the one the device signed — try the next
+    }
+  }
+
+  res.status(401).json({ error: 'فشل التحقق من البصمة. أعد المحاولة.' });
 }
 
 export function handleSessionCheck(req: express.Request, res: express.Response): void {

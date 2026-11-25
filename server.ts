@@ -18,6 +18,15 @@ import {
 } from './server/admin.js';
 import { lookupGermanDictionary } from './server/dictionary.js';
 import {
+  authRateLimit,
+  handleAuthenticationFinish,
+  handleAuthenticationStart,
+  handleLogout,
+  handleRegistrationFinish,
+  handleRegistrationStart,
+  handleSessionCheck,
+} from './server/webauthn.js';
+import {
   CEFR_CURRICULUM_UNITS,
   GRAMMAR_LIBRARY,
   IMPORTANT_SENTENCES_LIBRARY,
@@ -965,6 +974,30 @@ async function startServer() {
       createdAt: result.record.createdAt,
     });
   });
+
+  // Fingerprint (WebAuthn/Passkeys) authentication — the biometric gate in
+  // front of the workspace. Must stay above the SPA fallback.
+  // The handlers are async: a rejected promise must be answered here, because
+  // an unhandled rejection would otherwise terminate the whole server process.
+  const authRoute =
+    (handler: (req: express.Request, res: express.Response) => unknown | Promise<unknown>) =>
+    (req: express.Request, res: express.Response): void => {
+      Promise.resolve()
+        .then(() => handler(req, res))
+        .catch((err: unknown) => {
+          console.error('[auth] handler failed:', err instanceof Error ? err.message : err);
+          if (!res.headersSent) {
+            res.status(500).json({ error: 'حدث خطأ غير متوقع في الخادم. أعد المحاولة.', code: 'SERVER_ERROR' });
+          }
+        });
+    };
+
+  app.post('/api/auth/register/start', authRateLimit, authRoute(handleRegistrationStart));
+  app.post('/api/auth/register/finish', authRateLimit, authRoute(handleRegistrationFinish));
+  app.post('/api/auth/login/start', authRateLimit, authRoute(handleAuthenticationStart));
+  app.post('/api/auth/login/finish', authRateLimit, authRoute(handleAuthenticationFinish));
+  app.get('/api/auth/session', (req, res) => handleSessionCheck(req, res));
+  app.post('/api/auth/logout', (req, res) => handleLogout(req, res));
 
   // Administrator Ownership & Protected Management Routes (strictly server-authorized)
   app.get('/api/admin/session', (req, res) => {

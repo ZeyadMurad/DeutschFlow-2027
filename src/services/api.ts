@@ -1,4 +1,10 @@
 import type {
+  AuthenticationResponseJSON,
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON,
+} from '@simplewebauthn/browser';
+import type {
   CEFRLevel,
   CurriculumUnit,
   CustomRSSSource,
@@ -859,4 +865,204 @@ export async function reportLearningEngineError(payload: {
   return data.report;
 }
 
+// ---------------------------------------------------------------------------
+// Fingerprint (WebAuthn/Passkeys) authentication — the biometric gate in
+// front of the workspace
+// ---------------------------------------------------------------------------
+
+export interface BiometricAuthSession {
+  userId: string;
+  displayName: string;
+}
+
+/** Machine-readable reasons the auth endpoints attach to an error, so the UI
+ *  can react without matching on message text. */
+export type BiometricApiCode =
+  /** the server knows no fingerprint at all (its data was reset) */
+  | 'NOT_ENROLLED'
+  /** this device's fingerprint is no longer known to the server */
+  | 'UNKNOWN_CREDENTIAL'
+  /** the attempt took longer than the server allows */
+  | 'CHALLENGE_EXPIRED'
+  /** too many attempts from this network */
+  | 'RATE_LIMITED';
+
+const BIOMETRIC_API_CODES: readonly string[] = ['NOT_ENROLLED', 'UNKNOWN_CREDENTIAL', 'CHALLENGE_EXPIRED'];
+
+/** A failed biometric endpoint call, keeping the HTTP status and the
+ *  server's error code so the UI can react to specific cases. */
+export class BiometricApiError extends Error {
+  readonly status: number;
+  readonly code: BiometricApiCode | undefined;
+
+  constructor(message: string, status: number, code?: BiometricApiCode) {
+    super(message);
+    this.name = 'BiometricApiError';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+function biometricErrorCode(status: number, code: unknown): BiometricApiCode | undefined {
+  if (typeof code === 'string' && BIOMETRIC_API_CODES.includes(code)) {
+    return code as BiometricApiCode;
+  }
+  return status === 429 ? 'RATE_LIMITED' : undefined;
+}
+
+const AUTH_TOKEN_STORAGE_KEY = 'df_biometric_session_v1';
+
+export function getStoredAuthToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function storeAuthToken(token: string): void {
+  try {
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+  } catch {
+    // Ignore quota errors — session then survives only in memory
+  }
+}
+
+export function clearAuthToken(): void {
+  try {
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  } catch {
+    // Ignore
+  }
+}
+
+export async function checkAuthSession(token: string): Promise<BiometricAuthSession | null> {
+  const res = await fetch('/api/auth/session', {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+  });
+  const data = await parseJsonSafely<{ authenticated?: boolean; userId?: string; displayName?: string; error?: string }>(res);
+  if (!res.ok) return null;
+  return data.authenticated && data.userId
+    ? { userId: data.userId, displayName: data.displayName || 'DeutschFlow Learner' }
+    : null;
+}
+
+export async function startBiometricRegistration(
+  userId: string,
+  deviceName: string
+): Promise<{ userId: string; options: PublicKeyCredentialCreationOptionsJSON }> {
+  const res = await fetch('/api/auth/register/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ userId, deviceName }),
+  });
+  const data = await parseJsonSafely<{
+    userId: string;
+    options: PublicKeyCredentialCreationOptionsJSON;
+    error?: string;
+    code?: string;
+  }>(res);
+  if (!res.ok || !data.options) {
+    throw new BiometricApiError(
+      data.error || 'تعذر بدء تسجيل البصمة',
+      res.status,
+      biometricErrorCode(res.status, data.code)
+    );
+  }
+  return { userId: data.userId, options: data.options };
+}
+
+export async function finishBiometricRegistration(
+  userId: string,
+  credential: RegistrationResponseJSON,
+  deviceName: string
+): Promise<{ token: string; userId: string }> {
+  const res = await fetch('/api/auth/register/finish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ userId, credential, deviceName }),
+  });
+  const data = await parseJsonSafely<{
+    ok?: boolean;
+    userId?: string;
+    token?: string;
+    error?: string;
+    code?: string;
+  }>(res);
+  if (!res.ok || !data.token || !data.userId) {
+    throw new BiometricApiError(
+      data.error || 'فشل إكمال تسجيل البصمة',
+      res.status,
+      biometricErrorCode(res.status, data.code)
+    );
+  }
+  return { token: data.token, userId: data.userId };
+}
+
+/** Begins a fingerprint sign-in. `requestId` identifies this attempt on the
+ *  server, so the finish step checks exactly this attempt's challenge even
+ *  when an earlier attempt was cancelled and is still pending. */
+export async function startBiometricLogin(): Promise<{
+  options: PublicKeyCredentialRequestOptionsJSON;
+  requestId: string;
+}> {
+  const res = await fetch('/api/auth/login/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({}),
+  });
+  const data = await parseJsonSafely<{
+    options?: PublicKeyCredentialRequestOptionsJSON;
+    requestId?: string;
+    error?: string;
+    code?: string;
+  }>(res);
+  if (!res.ok || !data.options) {
+    throw new BiometricApiError(
+      data.error || 'تعذر بدء التعرف على البصمة',
+      res.status,
+      biometricErrorCode(res.status, data.code)
+    );
+  }
+  return { options: data.options, requestId: typeof data.requestId === 'string' ? data.requestId : '' };
+}
+
+export async function finishBiometricLogin(
+  credential: AuthenticationResponseJSON,
+  requestId: string
+): Promise<{ token: string; userId: string; displayName: string }> {
+  const res = await fetch('/api/auth/login/finish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ credential, requestId }),
+  });
+  const data = await parseJsonSafely<{
+    ok?: boolean;
+    userId?: string;
+    token?: string;
+    displayName?: string;
+    error?: string;
+    code?: string;
+  }>(res);
+  if (!res.ok || !data.token || !data.userId) {
+    throw new BiometricApiError(
+      data.error || 'فشل التحقق من البصمة',
+      res.status,
+      biometricErrorCode(res.status, data.code)
+    );
+  }
+  return { token: data.token, userId: data.userId, displayName: data.displayName || 'DeutschFlow Learner' };
+}
+
+export async function logoutBiometric(): Promise<void> {
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+    });
+  } catch {
+    // Best effort — token is discarded client-side anyway
+  }
+  clearAuthToken();
+}
 
