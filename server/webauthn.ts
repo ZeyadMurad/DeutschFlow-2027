@@ -334,9 +334,18 @@ export async function handleRegistrationStart(
     rpName: rpName(),
     rpID: rpID(req),
     userName: userId,
+    // A stable user handle derived from the learner id itself: the phone
+    // recognises "the same account" and replaces its existing passkey for
+    // this site instead of piling up a new one after every server-side data
+    // wipe (Render's free plan) — one passkey per device in the end.
+    userID: new TextEncoder().encode(`df:${userId}`),
     userDisplayName: existing?.displayName || 'DeutschFlow Learner',
     attestationType: 'none',
-    excludeCredentials: (existing?.credentials || []).map((c) => ({ id: c.id })),
+    // NOTE: deliberately NO excludeCredentials. With residentKey 'preferred'
+    // Chromium keeps the existing passkey for the same user handle and throws
+    // a NotAllowedError instead of creating the replacement credential, which
+    // surfaced as "finger not recognised" after a server data wipe. The
+    // user-handle match itself already guarantees one passkey per site.
     authenticatorSelection: {
       // Only the device's own built-in authenticator (the phone's fingerprint
       // sensor) — never a USB key or a passkey on another device.
@@ -415,7 +424,16 @@ export async function handleRegistrationFinish(
     if (existingCred) {
       Object.assign(existingCred, stored);
     } else {
-      user.credentials.push(stored);
+      // Server-side data was wiped (e.g. Render's free plan redeploys): keep
+      // only the newest credential for this device, replacing earlier ones
+      // from the same enrollment window, so the phone's single replaced
+      // passkey and the server stay in sync instead of accumulating.
+      user.credentials = [
+        ...(user.credentials.length > 0
+          ? user.credentials.slice(-Math.max(0, MAX_CREDENTIALS_PER_USER - 2))
+          : []),
+        stored,
+      ];
     }
     store.users[userId] = user;
     writeStore(store);

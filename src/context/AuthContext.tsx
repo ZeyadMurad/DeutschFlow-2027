@@ -10,6 +10,7 @@ import {
   clearAuthToken,
   finishBiometricLogin,
   finishBiometricRegistration,
+  getOrCreateLearnerProfileId,
   getStoredAuthToken,
   logoutBiometric,
   startBiometricLogin,
@@ -140,7 +141,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const registerFingerprint = useCallback(async (userId: string, deviceName: string) => {
-    const { userId: confirmedUserId, options } = await startBiometricRegistration(userId, deviceName);
+    // Reuse the device's stable learner id (the 2.0 learning profile id)
+    // instead of an empty one: after a server-side data wipe the fingerprint
+    // is re-enrolled under the SAME account, so the phone replaces its
+    // existing passkey for this site rather than accumulating new ones.
+    const stableUserId = userId || getOrCreateLearnerProfileId();
+    const { userId: confirmedUserId, options } = await startBiometricRegistration(stableUserId, deviceName);
     let attResp: Awaited<ReturnType<typeof startRegistration>>;
     try {
       attResp = await withCeremonyTimeout(startRegistration({ optionsJSON: options }));
