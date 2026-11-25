@@ -1,0 +1,34 @@
+# Render Blueprint — DeutschFlow-2027 with biometric (WebAuthn) authentication
+# Deploy: Render Dashboard → New → Blueprint → select this repo. Everything
+# (build command, start command, env vars) is preconfigured below.
+services:
+  - type: web
+    name: deutschflow-2027
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: bun install && bun run build
+    startCommand: bun run start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.11.0
+      # Secret for signing biometric user sessions — keep stable across deploys
+      - key: AUTH_SESSION_SECRET
+        generateValue: true
+      # WebAuthn Relying Party: set these to your final Render URL once known
+      # (e.g. rp id deutschflow-2027.onrender.com, origin https://…)
+      - key: WEBAUTHN_RP_ID
+        sync: false
+      - key: WEBAUTHN_RP_ORIGIN
+        sync: false
+      # ADMIN_SESSION_SECRET: reuse your existing admin secret if you have one
+      - key: ADMIN_SESSION_SECRET
+        sync: false
+      # Optional admin passcode (owner email is zeadmorud2030@gmail.com, fixed in code)
+      - key: ADMIN_PASSCODE
+        sync: false

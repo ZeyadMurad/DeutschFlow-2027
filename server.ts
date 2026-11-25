@@ -18,6 +18,15 @@ import {
 } from './server/admin.js';
 import { lookupGermanDictionary } from './server/dictionary.js';
 import {
+  authRateLimit,
+  handleAuthenticationFinish,
+  handleAuthenticationStart,
+  handleLogout,
+  handleRegistrationFinish,
+  handleRegistrationStart,
+  handleSessionCheck,
+} from './server/webauthn.js';
+import {
   CURATED_GERMAN_TITLES,
   NEWS_SOURCES,
   PODCAST_SOURCES,
@@ -929,6 +938,18 @@ async function startServer() {
       createdAt: result.record.createdAt,
     });
   });
+
+  // Fingerprint (WebAuthn/Passkeys) authentication — landing-page biometric login
+  app.post('/api/auth/register/start', authRateLimit, (req, res) => handleRegistrationStart(req, res));
+  app.post('/api/auth/register/finish', authRateLimit, (req, res) => {
+    void handleRegistrationFinish(req, res);
+  });
+  app.post('/api/auth/login/start', authRateLimit, (req, res) => handleAuthenticationStart(req, res));
+  app.post('/api/auth/login/finish', authRateLimit, (req, res) => {
+    void handleAuthenticationFinish(req, res);
+  });
+  app.get('/api/auth/session', (req, res) => handleSessionCheck(req, res));
+  app.post('/api/auth/logout', (req, res) => handleLogout(req, res));
 
   // Administrator Ownership & Protected Management Routes (strictly server-authorized)
   app.get('/api/admin/session', (req, res) => {

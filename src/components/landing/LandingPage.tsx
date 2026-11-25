@@ -10,6 +10,7 @@ import type { PublicAppConfig } from '../../services/api';
 import type { AppSectionId, UILanguage, UITheme } from '../../types/media';
 import { renderSectionSvgIcon } from '../icons/SectionIcons';
 import { PWAInstallButton } from '../pwa/PWAInstallButton';
+import { BiometricAuthCard } from './BiometricAuthCard';
 
 interface LandingPageProps {
   lang: UILanguage;
@@ -233,6 +234,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     </span>
                   </div>
                 )}
+              </div>
+
+              {/* Fingerprint (WebAuthn/Passkey) biometric sign-in card */}
+              <div className="max-w-xl mx-auto lg:mx-0 pt-2">
+                <BiometricAuthCard lang={lang} onAuthenticated={() => onContinue('home')} />
               </div>
             </div>
           </div>
