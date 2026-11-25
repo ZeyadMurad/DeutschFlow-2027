@@ -3,10 +3,8 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
-  Fingerprint,
   Home,
   Layers,
-  LogOut,
   Moon,
   Search,
   Settings,
@@ -14,7 +12,6 @@ import {
   Sun,
 } from 'lucide-react';
 import { PreferencesProvider, usePreferences } from './context/PreferencesContext';
-import { useAuth } from './context/AuthContext';
 import { UserDataProvider, useUserData } from './context/UserDataContext';
 import { GlobalAudioProvider } from './components/players/GlobalAudioContext';
 import { PersistentAudioBar } from './components/players/PersistentAudioBar';
@@ -113,7 +110,6 @@ const ModuleArtwork: React.FC<{
 const DeutschFlowWorkspace: React.FC = () => {
   const { data } = useUserData();
   const { lang, setLang, theme, toggleTheme, appConfig } = usePreferences();
-  const { session: authSession, signOut } = useAuth();
 
   const [showLanding, setShowLanding] = useState<boolean>(() => shouldStartOnLanding());
   const [activeSection, setActiveSection] = useState<AppSectionId>(() => readSectionFromHash());
@@ -159,8 +155,12 @@ const DeutschFlowWorkspace: React.FC = () => {
     }
   }, []);
 
+  // Fingerprint-only entry: the ONLY caller of handleContinueFromLanding is
+  // the biometric card's onAuthenticated (fingerprint success) callback.
   const handleContinueFromLanding = useCallback(
     (targetSection?: AppSectionId) => {
+      // Only invoked by the biometric card's onAuthenticated callback —
+      // after the green check the user is taken straight into the app.
       navigateTo(targetSection || 'home');
     },
     [navigateTo]
@@ -179,8 +179,6 @@ const DeutschFlowWorkspace: React.FC = () => {
           theme={theme}
           onToggleTheme={toggleTheme}
           onContinue={handleContinueFromLanding}
-          savedVocabCount={data.vocabulary.length}
-          exposureMinutes={data.exposureMinutes}
           appConfig={appConfig}
         />
         <OfflineIndicator lang={lang} />
@@ -262,23 +260,6 @@ const DeutschFlowWorkspace: React.FC = () => {
           {/* Controls: PWA Install + Theme Toggle + Language Switch + Unified Search */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <PWAInstallButton lang={lang} variant="header" />
-
-            {authSession && (
-              <div className="hidden sm:flex items-center gap-2 px-2.5 h-9 rounded-xl bg-[#0E4F47]/8 dark:bg-white/8 border border-[#0D4A42]/15 dark:border-[#3EF2DF]/25 text-[11px] font-semibold text-[#093D38] dark:text-[#CFE5E0]">
-                <Fingerprint className="w-3.5 h-3.5 text-[#1FB8A6]" />
-                <span className="font-mono-num max-w-[110px] truncate" title={authSession.userId}>
-                  {authSession.userId}
-                </span>
-                <button
-                  type="button"
-                  onClick={signOut}
-                  title={lang === 'ar' ? 'تسجيل الخروج' : lang === 'de' ? 'Abmelden' : 'Sign out'}
-                  className="text-[#52615D] dark:text-[#A4C8C1] hover:text-[#DD0000] cursor-pointer transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
 
             <button
               type="button"
