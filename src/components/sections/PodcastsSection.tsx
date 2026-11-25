@@ -10,6 +10,7 @@ import {
   Pause,
   Play,
   Search,
+  Sparkles,
 } from 'lucide-react';
 import { discoverPodcasts, fetchPodcasts, loadPodcastEpisodes } from '../../services/api';
 import type {
@@ -52,7 +53,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
     enqueuePodcastEpisode,
     togglePlayPause,
   } = useGlobalAudio();
-  const { data, isFavorite, toggleFavorite } = useUserData();
+  const { data, isFavorite, toggleFavorite, openLearningEngine } = useUserData();
 
   const [shows, setShows] = useState<PodcastShowWithEpisodes[]>([]);
   const [selectedShow, setSelectedShow] = useState<PodcastShowWithEpisodes | null>(null);
@@ -281,7 +282,7 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                               ? togglePlayPause()
                               : playPodcastEpisode(ep, selectedShow.episodes)
                           }
-                          className={`px-3.5 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer ${
+                          className={`px-3.5 py-2 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0 ${
                             isPlaying
                               ? 'bg-[#D85A40] text-white'
                               : 'bg-[#0E4B4B] text-white hover:bg-[#093535]'
@@ -306,12 +307,33 @@ export const PodcastsSection: React.FC<PodcastsSectionProps> = ({
                         href={ep.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-3.5 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] text-xs font-semibold inline-flex items-center gap-1.5"
+                        className="px-3.5 py-2 rounded-xl bg-[#F7F3EA] dark:bg-[#041B18] text-[#0E4B4B] dark:text-[#7FF9EB] text-xs font-semibold inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                         <span>التشغيل في الموقع الرسمي</span>
                       </a>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openLearningEngine({
+                          sourceId: ep.id,
+                          contentType: 'podcast',
+                          title: ep.title,
+                          text: `${ep.title}. ${ep.description || selectedShow.descriptionDe}`.trim(),
+                          sourceName: selectedShow.title,
+                          sourceUrl: ep.link,
+                          audioUrl: ep.audioUrl,
+                          difficulty: 'original',
+                          targetCefr: selectedShow.cefrLevel,
+                        })
+                      }
+                      className="px-3 py-2 rounded-xl bg-[#E8C35A]/22 text-[#7A5710] dark:text-[#E8C35A] text-xs font-bold inline-flex items-center gap-1 hover:bg-[#E8C35A]/35 cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>تعلّم</span>
+                    </button>
 
                     <button
                       type="button"

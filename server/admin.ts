@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import type express from 'express';
+import type { CEFRLevel, DeutschFlow2AdminConfig } from '../src/types/media.js';
 
 const DESIGNATED_OWNER_EMAIL = 'zeadmorud2030@gmail.com';
 const DEVELOPER_SUGGESTIONS_EMAIL = 'zeyad.ali.murad2@gmail.com';
@@ -27,8 +28,38 @@ export interface PublicAppConfig {
   announcementDe: string;
   announcementEn: string;
   hiddenModuleIds: string[];
+  learningConfig: DeutschFlow2AdminConfig;
   updatedAt: string;
 }
+
+export const DEFAULT_LEARNING_CONFIG: DeutschFlow2AdminConfig = {
+  xpRewards: {
+    articleReadingMission: 20,
+    listeningMission: 15,
+    vocabMission: 25,
+    vocabSaved: 4,
+    vocabReviewed: 5,
+    learningEngineComplete: 30,
+    cefrLessonComplete: 35,
+    cefrUnitAssessmentPass: 60,
+    placementComplete: 25,
+  },
+  dailyMissionTargets: {
+    readingMinutes: 5,
+    listeningMinutes: 5,
+    vocabWordsCount: 5,
+  },
+  featureFlags: {
+    flowJourneyEnabled: true,
+    dailyMissionsEnabled: true,
+    learningEngineEnabled: true,
+    cefrPathEnabled: true,
+    aiWritingTutorEnabled: true,
+    weeklyReportEnabled: true,
+    placementTestEnabled: true,
+  },
+  cefrNotes: {},
+};
 
 export const DEFAULT_PUBLIC_APP_CONFIG: PublicAppConfig = {
   heroTitleAr: 'عالمك الألماني الشخصي',
@@ -47,6 +78,7 @@ export const DEFAULT_PUBLIC_APP_CONFIG: PublicAppConfig = {
   announcementDe: '',
   announcementEn: '',
   hiddenModuleIds: [],
+  learningConfig: structuredClone(DEFAULT_LEARNING_CONFIG),
   updatedAt: new Date(0).toISOString(),
 };
 
@@ -92,6 +124,23 @@ function readAdminStore(): AdminPersistedStore {
           hiddenModuleIds: Array.isArray(parsed.config?.hiddenModuleIds)
             ? parsed.config.hiddenModuleIds.filter((x): x is string => typeof x === 'string')
             : [],
+          learningConfig: {
+            xpRewards: {
+              ...DEFAULT_LEARNING_CONFIG.xpRewards,
+              ...(parsed.config?.learningConfig?.xpRewards || {}),
+            },
+            dailyMissionTargets: {
+              ...DEFAULT_LEARNING_CONFIG.dailyMissionTargets,
+              ...(parsed.config?.learningConfig?.dailyMissionTargets || {}),
+            },
+            featureFlags: {
+              ...DEFAULT_LEARNING_CONFIG.featureFlags,
+              ...(parsed.config?.learningConfig?.featureFlags || {}),
+            },
+            cefrNotes: {
+              ...(parsed.config?.learningConfig?.cefrNotes || {}),
+            },
+          },
         },
       };
       return inMemoryAdminStore;
@@ -101,7 +150,7 @@ function readAdminStore(): AdminPersistedStore {
   }
   inMemoryAdminStore = {
     ownerEmail: DESIGNATED_OWNER_EMAIL,
-    config: { ...DEFAULT_PUBLIC_APP_CONFIG },
+    config: { ...DEFAULT_PUBLIC_APP_CONFIG, learningConfig: structuredClone(DEFAULT_LEARNING_CONFIG) },
   };
   return inMemoryAdminStore;
 }
@@ -328,6 +377,7 @@ export function updatePublicAppConfig(patch: Partial<PublicAppConfig>): PublicAp
     typeof val === 'string' ? val.trim().slice(0, maxLen) : fallback;
 
   const allowedSectionIds = new Set([
+    'flow-journey',
     'radio',
     'news',
     'newspapers',
@@ -348,6 +398,51 @@ export function updatePublicAppConfig(patch: Partial<PublicAppConfig>): PublicAp
     ? patch.hiddenModuleIds.filter((id): id is string => typeof id === 'string' && allowedSectionIds.has(id))
     : store.config.hiddenModuleIds;
 
+  const clampNum = (val: unknown, fallback: number, min: number, max: number) => {
+    const n = Number(val);
+    return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : fallback;
+  };
+  const prevLc = store.config.learningConfig || DEFAULT_LEARNING_CONFIG;
+  const patchLc = patch.learningConfig;
+  const allowedCefr: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const nextCefrNotes: Partial<Record<CEFRLevel, string>> = { ...(prevLc.cefrNotes || {}) };
+  if (patchLc?.cefrNotes && typeof patchLc.cefrNotes === 'object') {
+    for (const lvl of allowedCefr) {
+      if (typeof patchLc.cefrNotes[lvl] === 'string') {
+        nextCefrNotes[lvl] = patchLc.cefrNotes[lvl]!.trim().slice(0, 400);
+      }
+    }
+  }
+
+  const nextLearningConfig: DeutschFlow2AdminConfig = {
+    xpRewards: {
+      articleReadingMission: clampNum(patchLc?.xpRewards?.articleReadingMission, prevLc.xpRewards.articleReadingMission, 1, 200),
+      listeningMission: clampNum(patchLc?.xpRewards?.listeningMission, prevLc.xpRewards.listeningMission, 1, 200),
+      vocabMission: clampNum(patchLc?.xpRewards?.vocabMission, prevLc.xpRewards.vocabMission, 1, 200),
+      vocabSaved: clampNum(patchLc?.xpRewards?.vocabSaved, prevLc.xpRewards.vocabSaved, 0, 100),
+      vocabReviewed: clampNum(patchLc?.xpRewards?.vocabReviewed, prevLc.xpRewards.vocabReviewed, 0, 100),
+      learningEngineComplete: clampNum(patchLc?.xpRewards?.learningEngineComplete, prevLc.xpRewards.learningEngineComplete, 5, 300),
+      cefrLessonComplete: clampNum(patchLc?.xpRewards?.cefrLessonComplete, prevLc.xpRewards.cefrLessonComplete, 5, 300),
+      cefrUnitAssessmentPass: clampNum(patchLc?.xpRewards?.cefrUnitAssessmentPass, prevLc.xpRewards.cefrUnitAssessmentPass, 10, 500),
+      placementComplete: clampNum(patchLc?.xpRewards?.placementComplete, prevLc.xpRewards.placementComplete, 0, 300),
+    },
+    dailyMissionTargets: {
+      readingMinutes: clampNum(patchLc?.dailyMissionTargets?.readingMinutes, prevLc.dailyMissionTargets.readingMinutes, 1, 60),
+      listeningMinutes: clampNum(patchLc?.dailyMissionTargets?.listeningMinutes, prevLc.dailyMissionTargets.listeningMinutes, 1, 60),
+      vocabWordsCount: clampNum(patchLc?.dailyMissionTargets?.vocabWordsCount, prevLc.dailyMissionTargets.vocabWordsCount, 2, 20),
+    },
+    featureFlags: {
+      flowJourneyEnabled: patchLc?.featureFlags?.flowJourneyEnabled ?? prevLc.featureFlags.flowJourneyEnabled,
+      dailyMissionsEnabled: patchLc?.featureFlags?.dailyMissionsEnabled ?? prevLc.featureFlags.dailyMissionsEnabled,
+      learningEngineEnabled: patchLc?.featureFlags?.learningEngineEnabled ?? prevLc.featureFlags.learningEngineEnabled,
+      cefrPathEnabled: patchLc?.featureFlags?.cefrPathEnabled ?? prevLc.featureFlags.cefrPathEnabled,
+      aiWritingTutorEnabled: patchLc?.featureFlags?.aiWritingTutorEnabled ?? prevLc.featureFlags.aiWritingTutorEnabled,
+      weeklyReportEnabled: patchLc?.featureFlags?.weeklyReportEnabled ?? prevLc.featureFlags.weeklyReportEnabled,
+      placementTestEnabled: patchLc?.featureFlags?.placementTestEnabled ?? prevLc.featureFlags.placementTestEnabled,
+    },
+    cefrNotes: nextCefrNotes,
+  };
+
   const nextConfig: PublicAppConfig = {
     heroTitleAr: cleanStr(patch.heroTitleAr, store.config.heroTitleAr, 140) || DEFAULT_PUBLIC_APP_CONFIG.heroTitleAr,
     heroTitleDe: cleanStr(patch.heroTitleDe, store.config.heroTitleDe, 140) || DEFAULT_PUBLIC_APP_CONFIG.heroTitleDe,
@@ -362,6 +457,7 @@ export function updatePublicAppConfig(patch: Partial<PublicAppConfig>): PublicAp
     announcementDe: cleanStr(patch.announcementDe, store.config.announcementDe, 260),
     announcementEn: cleanStr(patch.announcementEn, store.config.announcementEn, 260),
     hiddenModuleIds: nextHidden,
+    learningConfig: nextLearningConfig,
     updatedAt: new Date().toISOString(),
   };
 

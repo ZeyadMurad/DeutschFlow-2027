@@ -1,5 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BookmarkPlus, ExternalLink, Heart, AlertTriangle, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  BookmarkPlus,
+  Check,
+  ExternalLink,
+  GraduationCap,
+  Heart,
+  Plus,
+  X,
+} from 'lucide-react';
 import type { YouTubeVideo } from '../../types/media';
 import { useUserData } from '../../context/UserDataContext';
 import { useGlobalAudio } from './GlobalAudioContext';
@@ -17,15 +26,33 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
   onSelectRelated,
   onClose,
 }) => {
-  const { isFavorite, toggleFavorite, recordHistory, addExposureSeconds } = useUserData();
+  const {
+    isFavorite,
+    toggleFavorite,
+    recordHistory,
+    addExposureSeconds,
+    logLearningActivity,
+    openLearningEngine,
+    addVocab,
+  } = useUserData();
   const { stopAll } = useGlobalAudio();
   const [embedBlocked, setEmbedBlocked] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
+  const [quickVocabOpen, setQuickVocabOpen] = useState(false);
+  const [qWord, setQWord] = useState('');
+  const [qTrans, setQTrans] = useState('');
+  const [qSentence, setQSentence] = useState('');
+  const [qSaved, setQSaved] = useState(false);
+
   useEffect(() => {
     if (!video) return;
     setEmbedBlocked(false);
-    // Prevent simultaneous radio/podcast playback while watching a video
+    setQuickVocabOpen(false);
+    setQWord('');
+    setQTrans('');
+    setQSentence('');
+    setQSaved(false);
     stopAll();
     recordHistory({
       type: 'video',
@@ -35,10 +62,20 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
     });
 
     const timer = window.setInterval(() => {
-      if (!embedBlocked) addExposureSeconds(30);
-    }, 30000);
+      if (!embedBlocked && document.visibilityState === 'visible') {
+        addExposureSeconds(20);
+        void logLearningActivity({
+          type: 'watching',
+          durationSeconds: 20,
+          skill: 'listening',
+          sourceId: video.videoId,
+          sourceTitle: video.title,
+          cefrLevel: video.cefrLevel,
+        });
+      }
+    }, 20000);
     return () => window.clearInterval(timer);
-  }, [video, stopAll, recordHistory, addExposureSeconds, embedBlocked]);
+  }, [video, stopAll, recordHistory, addExposureSeconds, logLearningActivity, embedBlocked]);
 
   // Listen to YouTube IFrame API postMessage errors (e.g., 101 / 150 embedding disabled)
   useEffect(() => {
@@ -66,6 +103,23 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
     typeof window !== 'undefined' ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
   const embedSrc = `https://www.youtube.com/embed/${video.videoId}?enablejsapi=1&rel=0&hl=de${originParam}`;
 
+  const handleSaveQuickVocab = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!qWord.trim()) return;
+    addVocab({
+      word: qWord.trim(),
+      translation: qTrans.trim() || '—',
+      sentence: qSentence.trim() || video.title,
+      sourceTitle: `${video.channelName}: ${video.title}`,
+      sourceUrl: video.watchUrl,
+      cefrLevel: video.cefrLevel,
+    });
+    setQSaved(true);
+    setQWord('');
+    setQTrans('');
+    setQSentence('');
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
@@ -82,14 +136,36 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
               {video.title}
             </h3>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer shrink-0"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() =>
+                openLearningEngine({
+                  sourceId: `yt_${video.videoId}`,
+                  contentType: video.category === 'documentary' || video.category === 'investigation' ? 'documentary' : 'video',
+                  title: video.title,
+                  text: video.description || video.title,
+                  sourceName: video.channelName,
+                  sourceUrl: video.watchUrl,
+                  videoId: video.videoId,
+                  difficulty: 'original',
+                  targetCefr: video.cefrLevel || 'B1',
+                })
+              }
+              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#E8C35A] to-[#C8962E] text-[#041B18] text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer hover:brightness-105 whitespace-nowrap"
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>تعلّم هذا المحتوى</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close"
+              className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center cursor-pointer shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
@@ -128,8 +204,8 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
             </div>
 
             {/* Action strip below video */}
-            <div className="bg-white dark:bg-[#072B26] p-4 sm:p-5 border-t border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24">
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div className="bg-white dark:bg-[#072B26] p-4 sm:p-5 border-t border-[#0E4B4B]/10 dark:border-[#3EF2DF]/24 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="text-xs text-[#52615D] dark:text-[#9EC5BE]">
                   <span>{video.channelName}</span>
                   <span aria-hidden="true"> · </span>
@@ -145,6 +221,15 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setQuickVocabOpen((v) => !v)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#D85A40] text-white inline-flex items-center gap-1.5 cursor-pointer hover:brightness-105"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ أضف لمفرداتي</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => toggleFavorite({ kind: 'videos', item: video })}
@@ -182,6 +267,44 @@ export const YouTubeModalPlayer: React.FC<YouTubeModalPlayerProps> = ({
                   </a>
                 </div>
               </div>
+
+              {quickVocabOpen && (
+                <form
+                  onSubmit={handleSaveQuickVocab}
+                  className="p-3 rounded-xl bg-[#FAF7F0] dark:bg-[#041B18] border border-[#0E4B4B]/15 dark:border-[#3EF2DF]/25 grid grid-cols-1 sm:grid-cols-4 gap-2"
+                >
+                  <input
+                    type="text"
+                    value={qWord}
+                    onChange={(e) => setQWord(e.target.value)}
+                    placeholder="كلمة من الفيديو..."
+                    dir="ltr"
+                    className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#072B26] border border-[#0E4B4B]/15 text-xs font-german"
+                  />
+                  <input
+                    type="text"
+                    value={qTrans}
+                    onChange={(e) => setQTrans(e.target.value)}
+                    placeholder="المعنى بالعربية..."
+                    className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#072B26] border border-[#0E4B4B]/15 text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={qSentence}
+                    onChange={(e) => setQSentence(e.target.value)}
+                    placeholder="الجملة / السياق..."
+                    dir="ltr"
+                    className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#072B26] border border-[#0E4B4B]/15 text-xs font-german"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3 py-1.5 rounded-lg bg-[#093D38] text-white text-xs font-bold inline-flex items-center justify-center gap-1 cursor-pointer"
+                  >
+                    {qSaved ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    <span>{qSaved ? 'تم الحفظ' : 'حفظ الكلمة'}</span>
+                  </button>
+                </form>
+              )}
 
               {video.description && (
                 <p

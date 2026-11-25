@@ -5,12 +5,14 @@ import {
   Check,
   ExternalLink,
   Focus,
+  GraduationCap,
   Headphones,
   Heart,
   Languages,
   Loader2,
   Pause,
   Plus,
+  Sparkles,
   Volume2,
   X,
 } from 'lucide-react';
@@ -58,7 +60,15 @@ function providerLabel(provider: string): string {
 }
 
 export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article, onClose }) => {
-  const { isFavorite, toggleFavorite, addVocab, recordHistory } = useUserData();
+  const {
+    isFavorite,
+    toggleFavorite,
+    addVocab,
+    recordHistory,
+    logLearningActivity,
+    addExposureSeconds,
+    openLearningEngine,
+  } = useUserData();
   const {
     mode,
     status,
@@ -74,6 +84,7 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
 
   const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg' | 'xl'>('md');
   const [focusMode, setFocusMode] = useState(false);
+  const [activeReadingSec, setActiveReadingSec] = useState(0);
 
   // Interactive German dictionary & vocab saving
   const [selectedWord, setSelectedWord] = useState('');
@@ -102,8 +113,70 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
       setTranslateError('');
       setNoteInput('');
       setSavedNotice(false);
+      setActiveReadingSec(0);
     }
   }, [article, recordHistory]);
+
+  // Real active visible reading timer (only ticks when tab visible & user active within last 45s)
+  React.useEffect(() => {
+    if (!article) return;
+    let lastInteraction = Date.now();
+    let pendingFlush = 0;
+    let totalTracked = 0;
+    let markedComplete = false;
+
+    const markActive = () => {
+      lastInteraction = Date.now();
+    };
+    window.addEventListener('pointerdown', markActive);
+    window.addEventListener('keydown', markActive);
+    window.addEventListener('scroll', markActive, true);
+
+    const tick = window.setInterval(() => {
+      const visible = document.visibilityState === 'visible';
+      const recentlyActive = Date.now() - lastInteraction <= 45000;
+      if (!visible || !recentlyActive) return;
+
+      pendingFlush += 5;
+      totalTracked += 5;
+      setActiveReadingSec((prev) => prev + 5);
+      addExposureSeconds(5);
+
+      if (pendingFlush >= 20) {
+        const chunk = pendingFlush;
+        pendingFlush = 0;
+        const justCompleted = !markedComplete && totalTracked >= 60;
+        if (justCompleted) markedComplete = true;
+        void logLearningActivity({
+          type: 'reading',
+          durationSeconds: chunk,
+          skill: 'reading',
+          sourceId: article.id,
+          sourceTitle: article.title,
+          cefrLevel: article.cefrLevel,
+          articleCompleted: justCompleted,
+        });
+      }
+    }, 5000);
+
+    return () => {
+      window.clearInterval(tick);
+      window.removeEventListener('pointerdown', markActive);
+      window.removeEventListener('keydown', markActive);
+      window.removeEventListener('scroll', markActive, true);
+      if (pendingFlush >= 5) {
+        void logLearningActivity({
+          type: 'reading',
+          durationSeconds: pendingFlush,
+          skill: 'reading',
+          sourceId: article.id,
+          sourceTitle: article.title,
+          cefrLevel: article.cefrLevel,
+          articleCompleted: !markedComplete && totalTracked >= 45,
+        });
+      }
+    };
+  }, [article, addExposureSeconds, logLearningActivity]);
 
   const titleTokens = useMemo(() => {
     if (!article) return [];
@@ -192,6 +265,15 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
 
   const handleSaveVocab = () => {
     if (!selectedWord.trim()) return;
+    const posLower = (lookupDetails?.partOfSpeech || '').toLowerCase();
+    const inferredCategory = posLower.includes('noun') || posLower.includes('اسم')
+      ? 'noun'
+      : posLower.includes('verb') || posLower.includes('فعل')
+      ? 'verb'
+      : posLower.includes('adj') || posLower.includes('صف')
+      ? 'adjective'
+      : 'other';
+
     addVocab({
       word: selectedWord.trim(),
       translation: translation.trim() || '—',
@@ -201,11 +283,27 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
       note: noteInput.trim() || undefined,
       lemma: lookupDetails?.lemma,
       partOfSpeech: lookupDetails?.partOfSpeech,
+      wordCategory: inferredCategory,
       article: lookupDetails?.article,
       plural: lookupDetails?.plural,
+      cefrLevel: article.cefrLevel,
     });
     setSavedNotice(true);
     setNoteInput('');
+  };
+
+  const handleOpenLearningEngine = () => {
+    openLearningEngine({
+      sourceId: article.id,
+      contentType: 'article',
+      title: article.title,
+      text: article.excerpt || article.title,
+      sourceName: article.sourceName,
+      sourceUrl: article.link,
+      audioUrl: article.audioUrl,
+      difficulty: 'original',
+      targetCefr: article.cefrLevel || 'B1',
+    });
   };
 
   return (
@@ -222,8 +320,21 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
             <span className="text-xs font-medium text-[#F7F3EA]/85 truncate">
               {article.sourceName} · {new Date(article.publishedAt).toLocaleString('de-DE')}
             </span>
+            {activeReadingSec > 0 && (
+              <span className="text-[11px] font-mono-num text-[#7FF9EB] shrink-0">
+                · {Math.floor(activeReadingSec / 60)}:{String(activeReadingSec % 60).padStart(2, '0')} قراءة نشطة
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleOpenLearningEngine}
+              className="px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#E8C35A] to-[#C8962E] text-[#041B18] text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer hover:brightness-105 whitespace-nowrap"
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span>تعلّم هذا المحتوى</span>
+            </button>
             <button
               type="button"
               onClick={() => setFocusMode((f) => !f)}
@@ -575,14 +686,27 @@ export const ArticleReaderModal: React.FC<ArticleReaderModalProps> = ({ article,
                     {savedNotice ? (
                       <>
                         <Check className="w-3.5 h-3.5" />
-                        <span>تم الحفظ في مفرداتي</span>
+                        <span>تمت الإضافة إلى My Vocabulary</span>
                       </>
                     ) : (
                       <>
                         <Plus className="w-3.5 h-3.5" />
-                        <span>حفظ الكلمة + الجملة</span>
+                        <span>+ أضف إلى مفرداتي (Add to My Vocabulary)</span>
                       </>
                     )}
+                  </button>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#0E4B4B]/10 dark:border-[#3EF2DF]/18">
+                  <span className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">
+                    حوّل هذا المقال بالكامل إلى درس تفاعلي (مفردات + قواعد + تحليل جمل + اختبار + كتابة):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleOpenLearningEngine}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#093D38] dark:bg-[#E8C35A] text-white dark:text-[#041B18] text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer hover:brightness-105"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>تعلّم هذا المحتوى (Learn This Content)</span>
                   </button>
                 </div>
               </div>

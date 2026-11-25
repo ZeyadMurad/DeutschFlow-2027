@@ -6,6 +6,7 @@ import {
   Headphones,
   Heart,
   Search,
+  Sparkles,
   Volume2,
 } from 'lucide-react';
 import { fetchCustomNewsFeeds, fetchNewsFeed } from '../../services/api';
@@ -52,7 +53,7 @@ export const NewsSection: React.FC<NewsSectionProps> = ({
   initialSourceId = '',
   onOpenArticle,
 }) => {
-  const { data, isFavorite, toggleFavorite } = useUserData();
+  const { data, isFavorite, toggleFavorite, openLearningEngine } = useUserData();
   const { playArticleAudio } = useGlobalAudio();
 
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -273,12 +274,12 @@ export const NewsSection: React.FC<NewsSectionProps> = ({
                   </div>
                 </div>
 
-                <div className="px-4 sm:px-5 py-3 bg-[#FAF7F0] dark:bg-[#05231F] border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
+                <div className="px-4 sm:px-5 py-3 bg-[#FAF7F0] dark:bg-[#05231F] border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <button
                       type="button"
                       onClick={() => onOpenArticle(art)}
-                      className="px-3 py-1.5 rounded-lg bg-[#0E4B4B] text-white text-xs font-medium inline-flex items-center gap-1 hover:bg-[#093535] cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-[#0E4B4B] text-white text-xs font-medium inline-flex items-center gap-1 hover:bg-[#093535] cursor-pointer whitespace-nowrap shrink-0"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
                       <span>قراءة</span>
@@ -287,7 +288,7 @@ export const NewsSection: React.FC<NewsSectionProps> = ({
                     <button
                       type="button"
                       onClick={() => playArticleAudio(art, false)}
-                      className="px-2.5 py-1.5 rounded-lg bg-[#D85A40]/12 text-[#D85A40] text-xs font-medium inline-flex items-center gap-1 hover:bg-[#D85A40]/20 cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-lg bg-[#D85A40]/12 text-[#D85A40] text-xs font-medium inline-flex items-center gap-1 hover:bg-[#D85A40]/20 cursor-pointer whitespace-nowrap shrink-0"
                       title={art.audioUrl ? 'تشغيل الصوت الأصلي' : 'استماع بالنطق الألماني TTS'}
                     >
                       {art.audioUrl ? (
@@ -296,6 +297,27 @@ export const NewsSection: React.FC<NewsSectionProps> = ({
                         <Volume2 className="w-3.5 h-3.5" />
                       )}
                       <span>{art.audioUrl ? 'صوت أصلي' : 'استماع'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openLearningEngine({
+                          sourceId: art.id,
+                          contentType: sectionId === 'reading' ? 'reading' : 'article',
+                          title: art.title,
+                          text: `${art.title}. ${art.excerpt}`.trim(),
+                          sourceName: art.sourceName,
+                          sourceUrl: art.link,
+                          audioUrl: art.audioUrl,
+                          difficulty: 'original',
+                          targetCefr: art.cefrLevel,
+                        })
+                      }
+                      className="px-2.5 py-1.5 rounded-lg bg-[#E8C35A]/22 text-[#7A5710] dark:text-[#E8C35A] text-xs font-bold inline-flex items-center gap-1 hover:bg-[#E8C35A]/35 cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>تعلّم</span>
                     </button>
                   </div>
 

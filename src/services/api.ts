@@ -1,22 +1,36 @@
 import type {
-  AuthenticationResponseJSON,
-  PublicKeyCredentialCreationOptionsJSON,
-  PublicKeyCredentialRequestOptionsJSON,
-  RegistrationResponseJSON,
-} from '@simplewebauthn/browser';
-import type {
+  CEFRLevel,
+  CurriculumUnit,
   CustomRSSSource,
+  DeutschFlow2AdminConfig,
   DictionaryLookupResult,
+  GrammarLibraryEntry,
+  ImportantSentenceEntry,
+  LearnerProfileState,
+  LearningActivityType,
+  LearningContentInput,
+  LearningEngineErrorReport,
+  LearningLesson,
+  LearningTelemetryStats,
   MovieSeriesTitle,
   NewsArticle,
   NewsCategory,
   NewsSourceMeta,
+  PlacementQuestion,
   PodcastShowMeta,
   PodcastShowWithEpisodes,
   RadioCategory,
   RadioStation,
+  SentenceAnalysisResult,
   SourceHealthStatus,
   StreamingPlatform,
+  UserAchievement,
+  UserMistake,
+  VocabItem,
+  VocabReviewRating,
+  WeeklyReport,
+  WritingEvaluationResult,
+  XPTransaction,
   YouTubeCategory,
   YouTubeChannelMeta,
   YouTubeVideo,
@@ -362,6 +376,7 @@ export interface PublicAppConfig {
   announcementDe: string;
   announcementEn: string;
   hiddenModuleIds: string[];
+  learningConfig?: DeutschFlow2AdminConfig;
   updatedAt: string;
 }
 
@@ -468,6 +483,8 @@ export async function fetchAdminOverview(token: string): Promise<{
   config: PublicAppConfig;
   suggestions: SuggestionItem[];
   sourceHealth: SourceHealthStatus[];
+  learningTelemetry?: LearningTelemetryStats;
+  errorReports?: LearningEngineErrorReport[];
 }> {
   const res = await fetch('/api/admin/overview', {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
@@ -476,10 +493,25 @@ export async function fetchAdminOverview(token: string): Promise<{
     config: PublicAppConfig;
     suggestions: SuggestionItem[];
     sourceHealth: SourceHealthStatus[];
+    learningTelemetry?: LearningTelemetryStats;
+    errorReports?: LearningEngineErrorReport[];
     error?: string;
   }>(res);
   if (!res.ok) throw new Error(data.error || 'Unauthorized');
   return data;
+}
+
+export async function resolveAdminLearningReport(
+  token: string,
+  reportId: string
+): Promise<LearningEngineErrorReport> {
+  const res = await fetch(`/api/admin/learning-reports/${encodeURIComponent(reportId)}/resolve`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+  });
+  const data = await parseJsonSafely<{ report?: LearningEngineErrorReport; error?: string }>(res);
+  if (!res.ok || !data.report) throw new Error(data.error || 'Failed to resolve report');
+  return data.report;
 }
 
 export async function updateAdminConfig(
@@ -500,114 +532,331 @@ export async function updateAdminConfig(
   return data.config;
 }
 
-
 // ---------------------------------------------------------------------------
-// Fingerprint (WebAuthn/Passkeys) authentication — landing-page biometric login
+// DeutschFlow 2.0 — Learner Profile & Intelligent Ecosystem Client
 // ---------------------------------------------------------------------------
 
-export interface BiometricAuthSession {
-  userId: string;
-  displayName: string;
-}
+const PROFILE_ID_STORAGE_KEY = 'df_learner_profile_id_v1';
 
-const AUTH_TOKEN_STORAGE_KEY = 'df_biometric_session_v1';
-
-export function getStoredAuthToken(): string | null {
+export function getOrCreateLearnerProfileId(): string {
   try {
-    return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+    const existing = localStorage.getItem(PROFILE_ID_STORAGE_KEY);
+    if (existing && /^[a-zA-Z0-9_-]{8,64}$/.test(existing)) {
+      return existing;
+    }
+    const generated =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? `df_${crypto.randomUUID().replace(/-/g, '').slice(0, 20)}`
+        : `df_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(PROFILE_ID_STORAGE_KEY, generated);
+    return generated;
   } catch {
-    return null;
+    return 'df_session_fallback_profile';
   }
 }
 
-export function storeAuthToken(token: string): void {
+export function setLearnerProfileId(profileId: string): void {
   try {
-    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+    localStorage.setItem(PROFILE_ID_STORAGE_KEY, profileId);
   } catch {
-    // Ignore quota errors — session then survives only in memory
+    // Ignore storage errors
   }
 }
 
-export function clearAuthToken(): void {
+export function getBrowserTimezone(): string {
   try {
-    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   } catch {
-    // Ignore
+    return 'UTC';
   }
 }
 
-export async function checkAuthSession(token: string): Promise<BiometricAuthSession | null> {
-  const res = await fetch('/api/auth/session', {
-    headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
-  });
-  const data = await parseJsonSafely<{ authenticated?: boolean; userId?: string; displayName?: string; error?: string }>(res);
-  if (!res.ok) return null;
-  return data.authenticated && data.userId
-    ? { userId: data.userId, displayName: data.displayName || 'DeutschFlow Learner' }
-    : null;
+function learningHeaders(): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    'X-DeutschFlow-Profile': getOrCreateLearnerProfileId(),
+  };
 }
 
-export async function startBiometricRegistration(
-  userId: string,
-  deviceName: string
-): Promise<{ userId: string; options: PublicKeyCredentialCreationOptionsJSON }> {
-  const res = await fetch('/api/auth/register/start', {
+export interface ProfilePayloadResponse {
+  profile: LearnerProfileState;
+  weeklyReport: WeeklyReport;
+  availableWeeks: string[];
+  xpAwarded?: XPTransaction[];
+  unlockedAchievements?: UserAchievement[];
+}
+
+export async function fetchLearnerProfile(weekKey?: string): Promise<ProfilePayloadResponse> {
+  const qs = new URLSearchParams({ tz: getBrowserTimezone() });
+  if (weekKey) qs.set('weekKey', weekKey);
+  const res = await fetch(`/api/learning/profile?${qs.toString()}`, {
+    headers: { Accept: 'application/json', 'X-DeutschFlow-Profile': getOrCreateLearnerProfileId() },
+  });
+  const data = await parseJsonSafely<ProfilePayloadResponse & { error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to load learner profile');
+  return data;
+}
+
+export async function updateLearnerProfilePreferences(patch: {
+  dailyGoalMinutes?: number;
+  weeklyGoalMinutes?: number;
+  cefrLevel?: CEFRLevel;
+  vocabCollectionUpdate?: { vocabId: string; collections: string[]; note?: string };
+  deleteVocabId?: string;
+}): Promise<ProfilePayloadResponse> {
+  const res = await fetch('/api/learning/profile', {
+    method: 'PATCH',
+    headers: learningHeaders(),
+    body: JSON.stringify({ ...patch, timezone: getBrowserTimezone() }),
+  });
+  const data = await parseJsonSafely<ProfilePayloadResponse & { error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to update preferences');
+  return data;
+}
+
+export async function restoreProfileBySyncCode(syncCode: string): Promise<ProfilePayloadResponse> {
+  const res = await fetch('/api/learning/sync-restore', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ userId, deviceName }),
+    body: JSON.stringify({ syncCode: syncCode.trim() }),
   });
-  const data = await parseJsonSafely<{ userId: string; options: PublicKeyCredentialCreationOptionsJSON; error?: string }>(res);
-  if (!res.ok || !data.options) throw new Error(data.error || 'تعذر بدء تسجيل البصمة');
-  return { userId: data.userId, options: data.options };
+  const data = await parseJsonSafely<ProfilePayloadResponse & { error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || 'Sync code restore failed');
+  setLearnerProfileId(data.profile.profileId);
+  return data;
 }
 
-export async function finishBiometricRegistration(
-  userId: string,
-  credential: RegistrationResponseJSON,
-  deviceName: string
-): Promise<{ token: string; userId: string }> {
-  const res = await fetch('/api/auth/register/finish', {
+export async function postLearnerActivity(payload: {
+  type: LearningActivityType;
+  durationSeconds?: number;
+  scorePct?: number;
+  cefrLevel?: CEFRLevel;
+  skill?: 'reading' | 'listening' | 'vocabulary' | 'grammar' | 'writing';
+  sourceId?: string;
+  sourceTitle?: string;
+  articleCompleted?: boolean;
+}): Promise<ProfilePayloadResponse> {
+  const res = await fetch('/api/learning/activity', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ userId, credential, deviceName }),
+    headers: learningHeaders(),
+    body: JSON.stringify({ ...payload, timezone: getBrowserTimezone() }),
   });
-  const data = await parseJsonSafely<{ ok?: boolean; userId?: string; token?: string; error?: string }>(res);
-  if (!res.ok || !data.token || !data.userId) throw new Error(data.error || 'فشل إكمال تسجيل البصمة');
-  return { token: data.token, userId: data.userId };
+  const data = await parseJsonSafely<ProfilePayloadResponse & { error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to record activity');
+  return data;
 }
 
-export async function startBiometricLogin(): Promise<{ options: PublicKeyCredentialRequestOptionsJSON }> {
-  const res = await fetch('/api/auth/login/start', {
+export async function postDailyVocabMissionComplete(payload: {
+  savedWordsCount: number;
+  quizPassed: boolean;
+}): Promise<ProfilePayloadResponse> {
+  const res = await fetch('/api/learning/missions/vocab-complete', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({}),
+    headers: learningHeaders(),
+    body: JSON.stringify({ ...payload, timezone: getBrowserTimezone() }),
   });
-  const data = await parseJsonSafely<{ options: PublicKeyCredentialRequestOptionsJSON; error?: string }>(res);
-  if (!res.ok || !data.options) throw new Error(data.error || 'تعذر بدء التعرف على البصمة');
-  return { options: data.options };
+  const data = await parseJsonSafely<ProfilePayloadResponse & { error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to update mission');
+  return data;
 }
 
-export async function finishBiometricLogin(
-  credential: AuthenticationResponseJSON
-): Promise<{ token: string; userId: string; displayName: string }> {
-  const res = await fetch('/api/auth/login/finish', {
+export async function upsertLearnerVocabulary(
+  items: Array<Partial<VocabItem> & { word: string }>
+): Promise<ProfilePayloadResponse & { addedCount: number; mergedCount: number }> {
+  const res = await fetch('/api/learning/vocabulary/upsert', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ credential }),
+    headers: learningHeaders(),
+    body: JSON.stringify({ items, timezone: getBrowserTimezone() }),
   });
-  const data = await parseJsonSafely<{ ok?: boolean; userId?: string; token?: string; displayName?: string; error?: string }>(res);
-  if (!res.ok || !data.token || !data.userId) throw new Error(data.error || 'فشل التحقق من البصمة');
-  return { token: data.token, userId: data.userId, displayName: data.displayName || 'DeutschFlow Learner' };
+  const data = await parseJsonSafely<
+    ProfilePayloadResponse & { addedCount: number; mergedCount: number; error?: string }
+  >(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to save vocabulary');
+  return data;
 }
 
-export async function logoutBiometric(): Promise<void> {
-  try {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      headers: { Accept: 'application/json' },
-    });
-  } catch {
-    // Best effort — token is discarded client-side anyway
+export async function submitVocabSM2Review(
+  vocabId: string,
+  rating: VocabReviewRating
+): Promise<ProfilePayloadResponse & { updatedItem: VocabItem | null }> {
+  const res = await fetch('/api/learning/vocabulary/review', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify({ vocabId, rating, timezone: getBrowserTimezone() }),
+  });
+  const data = await parseJsonSafely<
+    ProfilePayloadResponse & { updatedItem: VocabItem | null; error?: string }
+  >(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to submit review');
+  return data;
+}
+
+export async function postLearningMistakes(
+  mistakes: Array<Omit<UserMistake, 'id' | 'count' | 'lastSeenAt'>>
+): Promise<ProfilePayloadResponse> {
+  const res = await fetch('/api/learning/mistakes', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify({ mistakes, timezone: getBrowserTimezone() }),
+  });
+  const data = await parseJsonSafely<ProfilePayloadResponse & { error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to record mistakes');
+  return data;
+}
+
+export async function fetchCefrCurriculum(): Promise<{
+  units: CurriculumUnit[];
+  grammarLibrary: GrammarLibraryEntry[];
+  importantSentences: ImportantSentenceEntry[];
+  placementQuestions: PlacementQuestion[];
+}> {
+  const res = await fetch('/api/learning/curriculum', { headers: { Accept: 'application/json' } });
+  const data = await parseJsonSafely<{
+    units: CurriculumUnit[];
+    grammarLibrary: GrammarLibraryEntry[];
+    importantSentences: ImportantSentenceEntry[];
+    placementQuestions: PlacementQuestion[];
+    error?: string;
+  }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to load curriculum');
+  return data;
+}
+
+export async function completeCefrTarget(payload: {
+  kind: 'lesson' | 'unit';
+  targetId: string;
+  scorePct: number;
+  cefrLevel: CEFRLevel;
+  mistakes?: Array<Omit<UserMistake, 'id' | 'count' | 'lastSeenAt'>>;
+}): Promise<ProfilePayloadResponse & { passed: boolean }> {
+  const res = await fetch('/api/learning/curriculum/complete', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify({ ...payload, timezone: getBrowserTimezone() }),
+  });
+  const data = await parseJsonSafely<ProfilePayloadResponse & { passed: boolean; error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to record curriculum completion');
+  return data;
+}
+
+export async function submitCefrPlacement(
+  answers: Array<{ questionId: string; selectedIndex: number }>
+): Promise<
+  ProfilePayloadResponse & {
+    result: { level: CEFRLevel; scorePct: number; correctCount: number; totalCount: number };
   }
-  clearAuthToken();
+> {
+  const res = await fetch('/api/learning/placement/submit', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify({ answers, timezone: getBrowserTimezone() }),
+  });
+  const data = await parseJsonSafely<
+    ProfilePayloadResponse & {
+      result: { level: CEFRLevel; scorePct: number; correctCount: number; totalCount: number };
+      error?: string;
+    }
+  >(res);
+  if (!res.ok) throw new Error(data.error || 'Placement submission failed');
+  return data;
 }
+
+export async function fetchWeeklyReport(weekKey?: string): Promise<{
+  report: WeeklyReport;
+  availableWeeks: string[];
+}> {
+  const qs = new URLSearchParams({ tz: getBrowserTimezone() });
+  if (weekKey) qs.set('weekKey', weekKey);
+  const res = await fetch(`/api/learning/weekly-report?${qs.toString()}`, {
+    headers: { Accept: 'application/json', 'X-DeutschFlow-Profile': getOrCreateLearnerProfileId() },
+  });
+  const data = await parseJsonSafely<{
+    report: WeeklyReport;
+    availableWeeks: string[];
+    error?: string;
+  }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch weekly report');
+  return data;
+}
+
+export async function generateLearningEngineCourse(
+  input: LearningContentInput
+): Promise<LearningLesson> {
+  const res = await fetch('/api/learning-engine/generate', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify(input),
+  });
+  const data = await parseJsonSafely<{ lesson?: LearningLesson; error?: string }>(res);
+  if (!res.ok || !data.lesson) {
+    throw new Error(data.error || 'تعذر توليد الدرس الذكي لهذا المحتوى.');
+  }
+  return data.lesson;
+}
+
+export async function analyzeSentenceViaEngine(sentenceDe: string): Promise<SentenceAnalysisResult> {
+  const res = await fetch('/api/learning-engine/analyze-sentence', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify({ sentenceDe }),
+  });
+  const data = await parseJsonSafely<{ analysis?: SentenceAnalysisResult; error?: string }>(res);
+  if (!res.ok || !data.analysis) {
+    throw new Error(data.error || 'تعذر تحليل الجملة حالياً.');
+  }
+  return data.analysis;
+}
+
+export async function evaluateWritingViaEngine(payload: {
+  promptDe: string;
+  userText: string;
+  targetWords: string[];
+  cefrLevel: CEFRLevel;
+}): Promise<WritingEvaluationResult> {
+  const res = await fetch('/api/learning-engine/evaluate-writing', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonSafely<{ evaluation?: WritingEvaluationResult; error?: string }>(res);
+  if (!res.ok || !data.evaluation) {
+    throw new Error(data.error || 'تعذر تقييم الكتابة حالياً.');
+  }
+  return data.evaluation;
+}
+
+export async function completeLearningEngineLesson(payload: {
+  lessonId: string;
+  sourceTitle: string;
+  cefrLevel?: CEFRLevel;
+  quizScorePct: number;
+  mistakes?: Array<Omit<UserMistake, 'id' | 'count' | 'lastSeenAt'>>;
+}): Promise<ProfilePayloadResponse> {
+  const res = await fetch('/api/learning-engine/complete', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify({ ...payload, timezone: getBrowserTimezone() }),
+  });
+  const data = await parseJsonSafely<ProfilePayloadResponse & { error?: string }>(res);
+  if (!res.ok) throw new Error(data.error || 'Failed to record lesson completion');
+  return data;
+}
+
+export async function reportLearningEngineError(payload: {
+  lessonId: string;
+  sourceTitle: string;
+  section: string;
+  message: string;
+}): Promise<LearningEngineErrorReport> {
+  const res = await fetch('/api/learning-engine/report-error', {
+    method: 'POST',
+    headers: learningHeaders(),
+    body: JSON.stringify(payload),
+  });
+  const data = await parseJsonSafely<{ report?: LearningEngineErrorReport; error?: string }>(res);
+  if (!res.ok || !data.report) throw new Error(data.error || 'Failed to report error');
+  return data.report;
+}
+
+

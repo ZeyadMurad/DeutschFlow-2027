@@ -18,14 +18,35 @@ import {
 } from './server/admin.js';
 import { lookupGermanDictionary } from './server/dictionary.js';
 import {
-  authRateLimit,
-  handleAuthenticationFinish,
-  handleAuthenticationStart,
-  handleLogout,
-  handleRegistrationFinish,
-  handleRegistrationStart,
-  handleSessionCheck,
-} from './server/webauthn.js';
+  CEFR_CURRICULUM_UNITS,
+  GRAMMAR_LIBRARY,
+  IMPORTANT_SENTENCES_LIBRARY,
+  PLACEMENT_QUESTIONS,
+} from './server/cefrCurriculum.js';
+import {
+  analyzeGermanSentence,
+  evaluateWritingPractice,
+  generateLearningLesson,
+} from './server/learningEngine.js';
+import {
+  addLearningErrorReport,
+  buildWeeklyReport,
+  completeCurriculumLessonOrUnit,
+  completeDailyVocabMission,
+  completeLearningEngineCourse,
+  getLearningTelemetryStats,
+  getOrCreateProfile,
+  loadErrorReports,
+  recordLearnerActivity,
+  recordMistakesBatch,
+  resolveLearningErrorReport,
+  resolveProfileBySyncCode,
+  reviewVocabWithSM2,
+  submitPlacementAssessment,
+  updateProfilePreferences,
+  upsertVocabularyItems,
+  validateProfileId,
+} from './server/learningStore.js';
 import {
   CURATED_GERMAN_TITLES,
   NEWS_SOURCES,
@@ -35,6 +56,9 @@ import {
   YOUTUBE_CHANNELS,
 } from './server/sources.js';
 import type {
+  CEFRLevel,
+  LearningActivityType,
+  LearningContentInput,
   NewsArticle,
   NewsCategory,
   PodcastEpisode,
@@ -43,6 +67,9 @@ import type {
   RadioCategory,
   RadioStation,
   SourceHealthStatus,
+  UserMistake,
+  VocabItem,
+  VocabReviewRating,
   YouTubeVideo,
 } from './src/types/media.js';
 
@@ -939,18 +966,6 @@ async function startServer() {
     });
   });
 
-  // Fingerprint (WebAuthn/Passkeys) authentication — landing-page biometric login
-  app.post('/api/auth/register/start', authRateLimit, (req, res) => handleRegistrationStart(req, res));
-  app.post('/api/auth/register/finish', authRateLimit, (req, res) => {
-    void handleRegistrationFinish(req, res);
-  });
-  app.post('/api/auth/login/start', authRateLimit, (req, res) => handleAuthenticationStart(req, res));
-  app.post('/api/auth/login/finish', authRateLimit, (req, res) => {
-    void handleAuthenticationFinish(req, res);
-  });
-  app.get('/api/auth/session', (req, res) => handleSessionCheck(req, res));
-  app.post('/api/auth/logout', (req, res) => handleLogout(req, res));
-
   // Administrator Ownership & Protected Management Routes (strictly server-authorized)
   app.get('/api/admin/session', (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -1008,7 +1023,18 @@ async function startServer() {
       config: getPublicAppConfig(),
       suggestions: readSuggestions(),
       sourceHealth: Array.from(sourceHealthMap.values()),
+      learningTelemetry: getLearningTelemetryStats(),
+      errorReports: loadErrorReports(),
     });
+  });
+
+  app.post('/api/admin/learning-reports/:id/resolve', requireAdminAuth, (req, res) => {
+    const updated = resolveLearningErrorReport(String(req.params.id || ''));
+    if (!updated) {
+      res.status(404).json({ error: 'Report not found' });
+      return;
+    }
+    res.json({ ok: true, report: updated });
   });
 
   app.put('/api/admin/config', requireAdminAuth, (req, res) => {
@@ -1369,6 +1395,349 @@ async function startServer() {
 
   app.post('/api/translate', handleDictionaryLookup);
   app.post('/api/dictionary', handleDictionaryLookup);
+
+  // -------------------------------------------------------------------------
+  // DeutschFlow 2.0 — Learner Profile, Missions, Vocabulary SRS, CEFR & Engine
+  // -------------------------------------------------------------------------
+  const getValidatedProfileId = (req: express.Request): string | null => {
+    const fromHeader = req.headers['x-deutschflow-profile'];
+    const raw = Array.isArray(fromHeader) ? fromHeader[0] : fromHeader;
+    return validateProfileId(raw || (req.query.profileId ? String(req.query.profileId) : null));
+  };
+
+  app.get('/api/learning/profile', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const tz = req.query.tz ? String(req.query.tz) : undefined;
+    const weekKey = req.query.weekKey ? String(req.query.weekKey) : undefined;
+    const profile = getOrCreateProfile(profileId, tz);
+    const weekly = buildWeeklyReport(profile, weekKey);
+    res.json({ profile, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.patch('/api/learning/profile', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as {
+      dailyGoalMinutes?: number;
+      weeklyGoalMinutes?: number;
+      cefrLevel?: CEFRLevel;
+      timezone?: string;
+      vocabCollectionUpdate?: { vocabId: string; collections: string[]; note?: string };
+      deleteVocabId?: string;
+    };
+    const profile = updateProfilePreferences(profileId, body);
+    const weekly = buildWeeklyReport(profile);
+    res.json({ profile, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.post('/api/learning/sync-restore', (req, res) => {
+    const body = (req.body || {}) as { syncCode?: string };
+    const code = typeof body.syncCode === 'string' ? body.syncCode.trim() : '';
+    if (!code || code.length < 6) {
+      res.status(400).json({ error: 'يرجى إدخال رمز المزامنة الصحيح (مثال: DF-XXXX-XXXX).' });
+      return;
+    }
+    const profile = resolveProfileBySyncCode(code);
+    if (!profile) {
+      res.status(404).json({ error: 'لم يتم العثور على ملف متعلّم مطابق لرمز المزامنة هذا.' });
+      return;
+    }
+    const weekly = buildWeeklyReport(profile);
+    res.json({ profile, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.post('/api/learning/activity', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as {
+      type?: LearningActivityType;
+      timezone?: string;
+      durationSeconds?: number;
+      scorePct?: number;
+      cefrLevel?: CEFRLevel;
+      skill?: 'reading' | 'listening' | 'vocabulary' | 'grammar' | 'writing';
+      sourceId?: string;
+      sourceTitle?: string;
+      articleCompleted?: boolean;
+    };
+    if (!body.type) {
+      res.status(400).json({ error: 'Activity type is required.' });
+      return;
+    }
+    const out = recordLearnerActivity(profileId, { ...body, type: body.type });
+    const weekly = buildWeeklyReport(out.profile);
+    res.json({ ...out, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.post('/api/learning/missions/vocab-complete', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as {
+      timezone?: string;
+      savedWordsCount?: number;
+      quizPassed?: boolean;
+    };
+    const out = completeDailyVocabMission(profileId, {
+      timezone: body.timezone,
+      savedWordsCount: Number(body.savedWordsCount || 0),
+      quizPassed: Boolean(body.quizPassed),
+    });
+    const weekly = buildWeeklyReport(out.profile);
+    res.json({ ...out, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.post('/api/learning/vocabulary/upsert', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as {
+      items?: Array<Partial<VocabItem> & { word: string }>;
+      timezone?: string;
+    };
+    if (!Array.isArray(body.items) || body.items.length === 0) {
+      res.status(400).json({ error: 'Vocabulary items array is required.' });
+      return;
+    }
+    const out = upsertVocabularyItems(profileId, body.items.slice(0, 200), body.timezone);
+    const weekly = buildWeeklyReport(out.profile);
+    res.json({ ...out, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.post('/api/learning/vocabulary/review', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as { vocabId?: string; rating?: VocabReviewRating; timezone?: string };
+    const rating = body.rating;
+    if (!body.vocabId || !rating || !['again', 'hard', 'good', 'easy'].includes(rating)) {
+      res.status(400).json({ error: 'Valid vocabId and rating (again|hard|good|easy) are required.' });
+      return;
+    }
+    const out = reviewVocabWithSM2(profileId, body.vocabId, rating, body.timezone);
+    if (!out.updatedItem) {
+      res.status(404).json({ error: 'Vocabulary entry not found in profile.' });
+      return;
+    }
+    const weekly = buildWeeklyReport(out.profile);
+    res.json({ ...out, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.post('/api/learning/mistakes', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as {
+      mistakes?: Array<Omit<UserMistake, 'id' | 'count' | 'lastSeenAt'>>;
+      timezone?: string;
+    };
+    const profile = recordMistakesBatch(profileId, Array.isArray(body.mistakes) ? body.mistakes : [], body.timezone);
+    const weekly = buildWeeklyReport(profile);
+    res.json({ profile, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.get('/api/learning/curriculum', (_req, res) => {
+    res.json({
+      units: CEFR_CURRICULUM_UNITS,
+      grammarLibrary: GRAMMAR_LIBRARY,
+      importantSentences: IMPORTANT_SENTENCES_LIBRARY,
+      placementQuestions: PLACEMENT_QUESTIONS,
+    });
+  });
+
+  app.post('/api/learning/curriculum/complete', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as {
+      kind?: 'lesson' | 'unit';
+      targetId?: string;
+      scorePct?: number;
+      cefrLevel?: CEFRLevel;
+      mistakes?: Array<Omit<UserMistake, 'id' | 'count' | 'lastSeenAt'>>;
+      timezone?: string;
+    };
+    if (!body.kind || !body.targetId || typeof body.scorePct !== 'number' || !body.cefrLevel) {
+      res.status(400).json({ error: 'kind, targetId, scorePct, and cefrLevel are required.' });
+      return;
+    }
+    const out = completeCurriculumLessonOrUnit(profileId, {
+      kind: body.kind,
+      targetId: body.targetId,
+      scorePct: Math.max(0, Math.min(100, Math.round(body.scorePct))),
+      cefrLevel: body.cefrLevel,
+      mistakes: body.mistakes,
+      timezone: body.timezone,
+    });
+    const weekly = buildWeeklyReport(out.profile);
+    res.json({ ...out, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.post('/api/learning/placement/submit', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as {
+      answers?: Array<{ questionId: string; selectedIndex: number }>;
+      timezone?: string;
+    };
+    if (!Array.isArray(body.answers) || body.answers.length === 0) {
+      res.status(400).json({ error: 'Answers array is required.' });
+      return;
+    }
+    const out = submitPlacementAssessment(profileId, body.answers, body.timezone);
+    const weekly = buildWeeklyReport(out.profile);
+    res.json({ ...out, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.get('/api/learning/weekly-report', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const tz = req.query.tz ? String(req.query.tz) : undefined;
+    const weekKey = req.query.weekKey ? String(req.query.weekKey) : undefined;
+    const profile = getOrCreateProfile(profileId, tz);
+    const out = buildWeeklyReport(profile, weekKey);
+    res.json(out);
+  });
+
+  app.post('/api/learning-engine/generate', async (req, res) => {
+    const rateKey = getValidatedProfileId(req) || req.ip || 'anon';
+    const body = (req.body || {}) as Partial<LearningContentInput>;
+    if (!body.title && !body.text) {
+      res.status(400).json({ error: 'يرجى تحديد عنوان أو نص المحتوى لتحويله إلى درس.' });
+      return;
+    }
+    const input: LearningContentInput = {
+      sourceId: String(body.sourceId || `manual_${Date.now()}`),
+      contentType: body.contentType || 'article',
+      title: String(body.title || ''),
+      text: String(body.text || ''),
+      sourceName: String(body.sourceName || 'DeutschFlow'),
+      sourceUrl: body.sourceUrl ? String(body.sourceUrl) : undefined,
+      audioUrl: body.audioUrl ? String(body.audioUrl) : undefined,
+      videoId: body.videoId ? String(body.videoId) : undefined,
+      difficulty:
+        body.difficulty === 'simplified' || body.difficulty === 'advanced'
+          ? body.difficulty
+          : 'original',
+      targetCefr: body.targetCefr,
+    };
+    const result = await generateLearningLesson(input, rateKey);
+    if (!result.ok) {
+      res.status(result.status).json({ error: result.error });
+      return;
+    }
+    res.json({ lesson: result.lesson });
+  });
+
+  app.post('/api/learning-engine/analyze-sentence', async (req, res) => {
+    const rateKey = getValidatedProfileId(req) || req.ip || 'anon';
+    const body = (req.body || {}) as { sentenceDe?: string };
+    const result = await analyzeGermanSentence(String(body.sentenceDe || ''), rateKey);
+    if (!result.ok) {
+      res.status(result.status).json({ error: result.error });
+      return;
+    }
+    res.json({ analysis: result.analysis });
+  });
+
+  app.post('/api/learning-engine/evaluate-writing', async (req, res) => {
+    const rateKey = getValidatedProfileId(req) || req.ip || 'anon';
+    const body = (req.body || {}) as {
+      promptDe?: string;
+      userText?: string;
+      targetWords?: string[];
+      cefrLevel?: CEFRLevel;
+    };
+    const result = await evaluateWritingPractice({
+      promptDe: String(body.promptDe || ''),
+      userText: String(body.userText || ''),
+      targetWords: Array.isArray(body.targetWords) ? body.targetWords.map(String) : [],
+      cefrLevel: body.cefrLevel || 'B1',
+      rateKey,
+    });
+    if (!result.ok) {
+      res.status(result.status).json({ error: result.error });
+      return;
+    }
+    res.json({ evaluation: result.evaluation });
+  });
+
+  app.post('/api/learning-engine/complete', (req, res) => {
+    const profileId = getValidatedProfileId(req);
+    if (!profileId) {
+      res.status(400).json({ error: 'Valid X-DeutschFlow-Profile ID header is required.' });
+      return;
+    }
+    const body = (req.body || {}) as {
+      lessonId?: string;
+      sourceTitle?: string;
+      cefrLevel?: CEFRLevel;
+      quizScorePct?: number;
+      mistakes?: Array<Omit<UserMistake, 'id' | 'count' | 'lastSeenAt'>>;
+      timezone?: string;
+    };
+    if (!body.lessonId || !body.sourceTitle) {
+      res.status(400).json({ error: 'lessonId and sourceTitle are required.' });
+      return;
+    }
+    const out = completeLearningEngineCourse(profileId, {
+      lessonId: body.lessonId,
+      sourceTitle: body.sourceTitle,
+      cefrLevel: body.cefrLevel,
+      quizScorePct: Number(body.quizScorePct || 0),
+      mistakes: body.mistakes,
+      timezone: body.timezone,
+    });
+    const weekly = buildWeeklyReport(out.profile);
+    res.json({ ...out, weeklyReport: weekly.report, availableWeeks: weekly.availableWeeks });
+  });
+
+  app.post('/api/learning-engine/report-error', (req, res) => {
+    const body = (req.body || {}) as {
+      lessonId?: string;
+      sourceTitle?: string;
+      section?: string;
+      message?: string;
+    };
+    if (!body.message || body.message.trim().length < 4) {
+      res.status(400).json({ error: 'يرجى كتابة وصف واضح للخطأ التعليمي.' });
+      return;
+    }
+    const report = addLearningErrorReport({
+      lessonId: String(body.lessonId || 'unknown'),
+      sourceTitle: String(body.sourceTitle || 'DeutschFlow Lesson'),
+      section: String(body.section || 'general'),
+      message: String(body.message),
+    });
+    res.json({ ok: true, report });
+  });
 
   // Guarantee /api/* requests NEVER fall through to Vite or SPA HTML index fallback
   app.use('/api', (_req, res) => {

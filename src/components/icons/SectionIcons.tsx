@@ -509,6 +509,29 @@ export const SettingsSvgIcon: React.FC<IconProps> = ({ className = 'w-11 h-11' }
   </svg>
 );
 
+export const FlowJourneySvgIcon: React.FC<IconProps> = ({ className = 'w-11 h-11' }) => (
+  <svg viewBox="0 0 64 64" fill="none" className={className} aria-hidden="true">
+    <defs>
+      <linearGradient id="df-fj-gold" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#FFF0B8" />
+        <stop offset="50%" stopColor="#E8C35A" />
+        <stop offset="100%" stopColor="#B8821D" />
+      </linearGradient>
+      <linearGradient id="df-fj-orb" x1="12" y1="12" x2="52" y2="52" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#3EF2DF" />
+        <stop offset="55%" stopColor="#127A6E" />
+        <stop offset="100%" stopColor="#052622" />
+      </linearGradient>
+    </defs>
+    <ellipse cx="32" cy="56" rx="19" ry="3.2" fill="#04221E" fillOpacity="0.22" />
+    <circle cx="32" cy="31" r="21" fill="url(#df-fj-orb)" stroke="url(#df-fj-gold)" strokeWidth="2.2" />
+    <path d="M18 39L27 29L35 34L46 20" stroke="#FFE99E" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="46" cy="20" r="3.6" fill="#FF7C62" stroke="#FFF2CC" strokeWidth="1.5" />
+    <circle cx="27" cy="29" r="2.6" fill="#7FF9EB" />
+    <circle cx="18" cy="39" r="2.6" fill="#7FF9EB" />
+  </svg>
+);
+
 export const BrandCrestSvg: React.FC<IconProps> = ({ className = 'w-9 h-9' }) => (
   <img
     src="/brand/deutschflow-logo.png"
@@ -547,6 +570,8 @@ export function renderSectionSvgIcon(id: Exclude<AppSectionId, 'home'>, classNam
       return <FavoritesSvgIcon className={className} />;
     case 'library':
       return <LibrarySvgIcon className={className} />;
+    case 'flow-journey':
+      return <FlowJourneySvgIcon className={className} />;
     case 'settings':
       return <SettingsSvgIcon className={className} />;
   }

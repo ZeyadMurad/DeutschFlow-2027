@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookmarkPlus, ExternalLink, Heart, Play, Search } from 'lucide-react';
+import { BookmarkPlus, ExternalLink, Heart, Play, Search, Sparkles } from 'lucide-react';
 import { fetchYouTubeVideos } from '../../services/api';
 import type {
   UILanguage,
@@ -38,7 +38,7 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({
   lockedCategory,
   onSelectVideo,
 }) => {
-  const { isFavorite, toggleFavorite } = useUserData();
+  const { isFavorite, toggleFavorite, openLearningEngine } = useUserData();
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [channels, setChannels] = useState<YouTubeChannelMeta[]>([]);
   const [category, setCategory] = useState<YouTubeCategory>(lockedCategory || defaultCategory);
@@ -242,15 +242,37 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({
                   </div>
                 </div>
 
-                <div className="px-4 py-2.5 bg-[#FAF7F0] dark:bg-[#05231F] border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24 flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onSelectVideo(video, channelVids)}
-                    className="px-3 py-1.5 rounded-lg bg-[#0E4B4B] text-white text-xs font-medium inline-flex items-center gap-1.5 hover:bg-[#093535] cursor-pointer"
-                  >
-                    <Play className="w-3.5 h-3.5" />
-                    <span>تشغيل داخل التطبيق</span>
-                  </button>
+                <div className="px-4 py-2.5 bg-[#FAF7F0] dark:bg-[#05231F] border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => onSelectVideo(video, channelVids)}
+                      className="px-3 py-1.5 rounded-lg bg-[#0E4B4B] text-white text-xs font-medium inline-flex items-center gap-1.5 hover:bg-[#093535] cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Play className="w-3.5 h-3.5" />
+                      <span>تشغيل داخل التطبيق</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openLearningEngine({
+                          sourceId: video.id,
+                          contentType: 'video',
+                          title: video.title,
+                          text: `${video.title}. ${video.description}`.trim(),
+                          sourceName: video.channelName,
+                          sourceUrl: video.watchUrl,
+                          videoId: video.videoId,
+                          difficulty: 'original',
+                          targetCefr: video.cefrLevel,
+                        })
+                      }
+                      className="px-2.5 py-1.5 rounded-lg bg-[#E8C35A]/22 text-[#7A5710] dark:text-[#E8C35A] text-xs font-bold inline-flex items-center gap-1 hover:bg-[#E8C35A]/35 cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>تعلّم</span>
+                    </button>
+                  </div>
 
                   <div className="flex items-center gap-1">
                     <button

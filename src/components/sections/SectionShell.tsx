@@ -29,6 +29,16 @@ const SETTINGS_SECTION_DEF: Omit<SectionDefinition, 'id'> = {
   accent: 'gold',
 };
 
+const FLOW_JOURNEY_DEF: Omit<SectionDefinition, 'id'> = {
+  titleAr: 'رحلتي التعليمية — Flow Journey',
+  titleDe: 'Meine Flow-Reise',
+  titleEn: 'My Flow Journey',
+  subtitleAr: 'مهامك اليومية، مسار المستويات A1–B2، مكتبة القواعد والجمل، بنك المفردات الذكي، والتقرير الأسبوعي',
+  subtitleDe: 'Tägliche Missionen, CEFR-Lernpfad A1–B2, Grammatik, Wortschatz & Wochenbericht',
+  subtitleEn: 'Daily missions, CEFR path A1–B2, grammar & sentence banks, smart vocabulary SRS, and weekly reports',
+  accent: 'gold',
+};
+
 export const SectionShell: React.FC<SectionShellProps> = ({
   sectionId,
   lang,
@@ -42,6 +52,8 @@ export const SectionShell: React.FC<SectionShellProps> = ({
   const def =
     sectionId === 'settings'
       ? SETTINGS_SECTION_DEF
+      : sectionId === 'flow-journey'
+      ? FLOW_JOURNEY_DEF
       : MAIN_SECTIONS.find((s) => s.id === sectionId) || SETTINGS_SECTION_DEF;
   const ui = UI_TEXT[lang];
   const isRtl = lang === 'ar';

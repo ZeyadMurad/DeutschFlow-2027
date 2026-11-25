@@ -38,8 +38,14 @@ interface GlobalAudioContextValue {
 const GlobalAudioContext = createContext<GlobalAudioContextValue | null>(null);
 
 export const GlobalAudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { data, recordHistory, recordRecentStation, savePodcastPosition, addExposureSeconds } =
-    useUserData();
+  const {
+    data,
+    recordHistory,
+    recordRecentStation,
+    savePodcastPosition,
+    addExposureSeconds,
+    logLearningActivity,
+  } = useUserData();
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -82,7 +88,7 @@ export const GlobalAudioProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   }, [selectedVoiceURI]);
 
-  // Exposure tracker (counts active playback seconds every 15s)
+  // Exposure tracker (counts real active playback seconds every 15s)
   useEffect(() => {
     if (exposureTickRef.current) {
       window.clearInterval(exposureTickRef.current);
@@ -91,6 +97,16 @@ export const GlobalAudioProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (status === 'playing') {
       exposureTickRef.current = window.setInterval(() => {
         addExposureSeconds(15);
+        const sourceId = activeEpisode?.id || activeStation?.id || activeArticle?.id || 'audio';
+        const sourceTitle = activeEpisode?.title || activeStation?.name || activeArticle?.title || 'German Audio';
+        void logLearningActivity({
+          type: 'listening',
+          durationSeconds: 15,
+          skill: 'listening',
+          sourceId,
+          sourceTitle,
+          cefrLevel: activeArticle?.cefrLevel,
+        });
       }, 15000);
     }
     return () => {
@@ -98,7 +114,7 @@ export const GlobalAudioProvider: React.FC<{ children: React.ReactNode }> = ({ c
         window.clearInterval(exposureTickRef.current);
       }
     };
-  }, [status, addExposureSeconds]);
+  }, [status, addExposureSeconds, logLearningActivity, activeEpisode, activeStation, activeArticle]);
 
   const teardownAudioElement = useCallback(() => {
     if (hlsRef.current) {

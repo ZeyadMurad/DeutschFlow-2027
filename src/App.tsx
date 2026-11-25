@@ -1,15 +1,21 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { LearningEngineModal } from './components/learning-engine/LearningEngineModal';
+import { FlowJourneyHub } from './components/journey/FlowJourneyHub';
 import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
+  Flame,
   Home,
   Layers,
   Moon,
   Search,
   Settings,
+  Sparkles,
   Star,
   Sun,
+  Trophy,
+  X,
 } from 'lucide-react';
 import { PreferencesProvider, usePreferences } from './context/PreferencesContext';
 import { UserDataProvider, useUserData } from './context/UserDataContext';
@@ -45,6 +51,7 @@ import type { AppSectionId, NewsArticle, UILanguage, YouTubeVideo } from './type
 
 const VALID_SECTIONS = new Set<AppSectionId>([
   'home',
+  'flow-journey',
   'radio',
   'news',
   'newspapers',
@@ -108,7 +115,7 @@ const ModuleArtwork: React.FC<{
 };
 
 const DeutschFlowWorkspace: React.FC = () => {
-  const { data } = useUserData();
+  const { data, learnerProfile, latestXpNotice, dismissXpNotice } = useUserData();
   const { lang, setLang, theme, toggleTheme, appConfig } = usePreferences();
 
   const [showLanding, setShowLanding] = useState<boolean>(() => shouldStartOnLanding());
@@ -155,12 +162,8 @@ const DeutschFlowWorkspace: React.FC = () => {
     }
   }, []);
 
-  // Fingerprint-only entry: the ONLY caller of handleContinueFromLanding is
-  // the biometric card's onAuthenticated (fingerprint success) callback.
   const handleContinueFromLanding = useCallback(
     (targetSection?: AppSectionId) => {
-      // Only invoked by the biometric card's onAuthenticated callback —
-      // after the green check the user is taken straight into the app.
       navigateTo(targetSection || 'home');
     },
     [navigateTo]
@@ -179,6 +182,8 @@ const DeutschFlowWorkspace: React.FC = () => {
           theme={theme}
           onToggleTheme={toggleTheme}
           onContinue={handleContinueFromLanding}
+          savedVocabCount={data.vocabulary.length}
+          exposureMinutes={data.exposureMinutes}
           appConfig={appConfig}
         />
         <OfflineIndicator lang={lang} />
@@ -388,6 +393,58 @@ const DeutschFlowWorkspace: React.FC = () => {
               </div>
             </section>
 
+            {/* Flow Journey 2.0 Quick Banner */}
+            {appConfig?.learningConfig?.featureFlags?.flowJourneyEnabled !== false && (
+              <section className="mb-6 df-card rounded-2xl p-4 sm:p-5 border border-[#C8962E]/35 bg-gradient-to-r from-[#093D38]/8 via-white/95 to-[#E8C35A]/12 dark:from-[#072B26] dark:via-[#062420] dark:to-[#0A3730] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#093D38] text-white dark:bg-[#E8C35A] dark:text-[#041B18] font-bold">
+                      Flow Journey 2.0
+                    </span>
+                    <span className="font-mono-num font-bold text-[#093D38] dark:text-[#7FF9EB]">
+                      CEFR {learnerProfile?.cefrLevel || 'A1'}
+                    </span>
+                    <span className="font-mono-num font-bold text-[#B68934] dark:text-[#E8C35A]">
+                      {learnerProfile?.totalXp ?? 0} XP
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-mono-num font-bold text-[#D85A40] dark:text-[#FF957E]">
+                      <Flame className="w-3.5 h-3.5" />
+                      {learnerProfile?.streak.currentStreak ?? 0} {lang === 'en' ? 'days' : 'أيام'}
+                    </span>
+                    {learnerProfile?.dailyMissions && (
+                      <span className="text-[#52615D] dark:text-[#9EC5BE] font-mono-num">
+                        · {lang === 'en' ? 'Missions' : 'المهام'}:{' '}
+                        {learnerProfile.dailyMissions.filter((m) => m.completed).length}/
+                        {learnerProfile.dailyMissions.length}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs sm:text-sm font-semibold text-[#172320] dark:text-[#E8F3F0]">
+                    {lang === 'de'
+                      ? 'Tägliche Lernmissionen, strukturierter CEFR-Pfad (A1–B2), KI-Lernstudio & Wochenbericht'
+                      : lang === 'en'
+                      ? 'Daily Missions, Structured CEFR Path (A1–B2), Smart Vocabulary Bank & Weekly Report'
+                      : 'رحلتك اليومية لتعلّم الألمانية: المهام اليومية، مسار المستويات CEFR، بنك المفردات الذكي والتقرير الأسبوعي'}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => navigateTo('flow-journey')}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#F3CF68] to-[#C8962E] text-[#041B18] text-xs font-extrabold inline-flex items-center justify-center gap-1.5 shadow-md hover:brightness-105 cursor-pointer shrink-0 whitespace-nowrap"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>
+                    {lang === 'de'
+                      ? 'Flow Journey öffnen'
+                      : lang === 'en'
+                      ? 'Open Flow Journey'
+                      : 'ابدأ رحلتي اليوم'}
+                  </span>
+                </button>
+              </section>
+            )}
+
             {/* 14 Module Cards Grid matching Reference Images 1 & 2 (3-col RTL Row 3 = reading | learning | documentaries) */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5">
               {orderedSections.map((sec) => {
@@ -430,6 +487,12 @@ const DeutschFlowWorkspace: React.FC = () => {
               })}
             </div>
           </div>
+        ) : activeSection === 'flow-journey' ? (
+          <FlowJourneyHub
+            lang={lang}
+            onBack={() => navigateTo('home')}
+            onNavigate={(sec) => navigateTo(sec)}
+          />
         ) : activeSection === 'radio' ? (
           <RadioSection lang={lang} onBack={() => navigateTo('home')} />
         ) : activeSection === 'news' ? (
@@ -503,6 +566,7 @@ const DeutschFlowWorkspace: React.FC = () => {
             lang={lang}
             initialTab={libraryTab}
             onBack={() => navigateTo('home')}
+            onOpenFlowJourney={() => navigateTo('flow-journey')}
           />
         )}
       </main>
@@ -627,6 +691,36 @@ const DeutschFlowWorkspace: React.FC = () => {
         onSelectVideo={(video, related) => setActiveVideo({ video, related })}
         onNavigateSection={(sec) => navigateTo(sec)}
       />
+
+      <LearningEngineModal />
+
+      {latestXpNotice && (
+        <div className="fixed top-20 end-4 z-50 max-w-xs rounded-2xl bg-[#093D38] dark:bg-[#072B26] text-white border border-[#E8C35A]/60 shadow-2xl px-4 py-3 flex items-start gap-3">
+          <Trophy className="w-5 h-5 text-[#E8C35A] shrink-0 mt-0.5" />
+          <div className="flex-1 text-xs space-y-0.5">
+            {latestXpNotice.xpAmount > 0 && (
+              <p className="font-bold text-[#E8C35A] font-mono-num">
+                +{latestXpNotice.xpAmount} Flow XP
+              </p>
+            )}
+            <p className="font-semibold">
+              {lang === 'en' ? latestXpNotice.labelEn : latestXpNotice.labelAr}
+            </p>
+            {latestXpNotice.achievements.length > 0 && (
+              <p className="text-[11px] text-[#7FF9EB]">
+                وسام جديد: {latestXpNotice.achievements.map((a) => a.titleAr).join(' · ')}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={dismissXpNotice}
+            className="text-white/75 hover:text-white cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       <OfflineIndicator lang={lang} />
       <PersistentAudioBar hasBottomNav />

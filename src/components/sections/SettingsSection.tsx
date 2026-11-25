@@ -26,13 +26,22 @@ import {
   fetchAdminOverview,
   fetchAdminSession,
   loginAdminOwner,
+  resolveAdminLearningReport,
   submitDeveloperSuggestion,
   updateAdminConfig,
   type AdminSessionStatus,
   type PublicAppConfig,
   type SuggestionItem,
 } from '../../services/api';
-import type { AppSectionId, SourceHealthStatus, UILanguage, UITheme } from '../../types/media';
+import type {
+  AppSectionId,
+  CEFRLevel,
+  LearningEngineErrorReport,
+  LearningTelemetryStats,
+  SourceHealthStatus,
+  UILanguage,
+  UITheme,
+} from '../../types/media';
 import { SectionShell } from './SectionShell';
 
 interface SettingsSectionProps {
@@ -83,6 +92,8 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({ onBack, onNavi
   const [overviewLoading, setOverviewLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
   const [sourceHealth, setSourceHealth] = useState<SourceHealthStatus[]>([]);
+  const [learningTelemetry, setLearningTelemetry] = useState<LearningTelemetryStats | null>(null);
+  const [errorReports, setErrorReports] = useState<LearningEngineErrorReport[]>([]);
   const [draftConfig, setDraftConfig] = useState<PublicAppConfig | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
   const [configSavedMsg, setConfigSavedMsg] = useState('');
@@ -104,6 +115,8 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({ onBack, onNavi
         setDraftConfig(ov.config);
         setSuggestions(ov.suggestions);
         setSourceHealth(ov.sourceHealth);
+        setLearningTelemetry(ov.learningTelemetry || null);
+        setErrorReports(ov.errorReports || []);
       }
     } catch {
       // Token may have expired or server restarted
@@ -931,6 +944,190 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({ onBack, onNavi
                             </div>
                           </div>
 
+                          {draftConfig.learningConfig && (
+                            <div className="rounded-2xl bg-[#FAF7F0] dark:bg-[#041B18]/80 border border-[#0D4A42]/12 dark:border-[#3EF2DF]/20 p-4 space-y-4">
+                              <h4 className="text-xs font-bold text-[#093D38] dark:text-[#E8C35A]">
+                                إعدادات DeutschFlow 2.0 (المهام اليومية، نقاط XP، ميزات الذكاء الاصطناعي وملاحظات CEFR)
+                              </h4>
+
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                <label className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">
+                                  هدف القراءة اليومي (دقائق)
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={120}
+                                    value={draftConfig.learningConfig.dailyMissionTargets.readingMinutes}
+                                    onChange={(e) =>
+                                      setDraftConfig({
+                                        ...draftConfig,
+                                        learningConfig: {
+                                          ...draftConfig.learningConfig!,
+                                          dailyMissionTargets: {
+                                            ...draftConfig.learningConfig!.dailyMissionTargets,
+                                            readingMinutes: Number(e.target.value) || 5,
+                                          },
+                                        },
+                                      })
+                                    }
+                                    className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#072B26] border border-[#0D4A42]/15 text-xs font-mono-num"
+                                  />
+                                </label>
+                                <label className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">
+                                  هدف الاستماع اليومي (دقائق)
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={120}
+                                    value={draftConfig.learningConfig.dailyMissionTargets.listeningMinutes}
+                                    onChange={(e) =>
+                                      setDraftConfig({
+                                        ...draftConfig,
+                                        learningConfig: {
+                                          ...draftConfig.learningConfig!,
+                                          dailyMissionTargets: {
+                                            ...draftConfig.learningConfig!.dailyMissionTargets,
+                                            listeningMinutes: Number(e.target.value) || 10,
+                                          },
+                                        },
+                                      })
+                                    }
+                                    className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#072B26] border border-[#0D4A42]/15 text-xs font-mono-num"
+                                  />
+                                </label>
+                                <label className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">
+                                  هدف كلمات اليوم
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    max={30}
+                                    value={draftConfig.learningConfig.dailyMissionTargets.vocabWordsCount}
+                                    onChange={(e) =>
+                                      setDraftConfig({
+                                        ...draftConfig,
+                                        learningConfig: {
+                                          ...draftConfig.learningConfig!,
+                                          dailyMissionTargets: {
+                                            ...draftConfig.learningConfig!.dailyMissionTargets,
+                                            vocabWordsCount: Number(e.target.value) || 5,
+                                          },
+                                        },
+                                      })
+                                    }
+                                    className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#072B26] border border-[#0D4A42]/15 text-xs font-mono-num"
+                                  />
+                                </label>
+                              </div>
+
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                {(
+                                  [
+                                    { key: 'articleReadingMission', label: 'XP مهمة القراءة' },
+                                    { key: 'listeningMission', label: 'XP مهمة الاستماع' },
+                                    { key: 'vocabMission', label: 'XP مهمة المفردات' },
+                                    { key: 'learningEngineComplete', label: 'XP محرك التعلّم' },
+                                    { key: 'cefrLessonComplete', label: 'XP درس CEFR' },
+                                    { key: 'cefrUnitAssessmentPass', label: 'XP اختبار وحدة' },
+                                    { key: 'vocabSaved', label: 'XP حفظ كلمة' },
+                                    { key: 'vocabReviewed', label: 'XP مراجعة SM-2' },
+                                  ] as const
+                                ).map((xpField) => (
+                                  <label key={xpField.key} className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">
+                                    {xpField.label}
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      max={500}
+                                      value={draftConfig.learningConfig!.xpRewards[xpField.key]}
+                                      onChange={(e) =>
+                                        setDraftConfig({
+                                          ...draftConfig,
+                                          learningConfig: {
+                                            ...draftConfig.learningConfig!,
+                                            xpRewards: {
+                                              ...draftConfig.learningConfig!.xpRewards,
+                                              [xpField.key]: Number(e.target.value) || 0,
+                                            },
+                                          },
+                                        })
+                                      }
+                                      className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#072B26] border border-[#0D4A42]/15 text-xs font-mono-num"
+                                    />
+                                  </label>
+                                ))}
+                              </div>
+
+                              {/* Feature Flags */}
+                              <div className="flex flex-wrap gap-1.5">
+                                {(
+                                  [
+                                    { key: 'flowJourneyEnabled', label: 'Flow Journey' },
+                                    { key: 'dailyMissionsEnabled', label: 'المهام اليومية' },
+                                    { key: 'learningEngineEnabled', label: 'محرك التعلّم الذكي' },
+                                    { key: 'cefrPathEnabled', label: 'مسار CEFR' },
+                                    { key: 'aiWritingTutorEnabled', label: 'مصحح الكتابة AI' },
+                                    { key: 'weeklyReportEnabled', label: 'التقرير الأسبوعي' },
+                                    { key: 'placementTestEnabled', label: 'تحديد المستوى' },
+                                  ] as const
+                                ).map((flag) => {
+                                  const on = draftConfig.learningConfig!.featureFlags[flag.key];
+                                  return (
+                                    <button
+                                      key={flag.key}
+                                      type="button"
+                                      onClick={() =>
+                                        setDraftConfig({
+                                          ...draftConfig,
+                                          learningConfig: {
+                                            ...draftConfig.learningConfig!,
+                                            featureFlags: {
+                                              ...draftConfig.learningConfig!.featureFlags,
+                                              [flag.key]: !on,
+                                            },
+                                          },
+                                        })
+                                      }
+                                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border cursor-pointer ${
+                                        on
+                                          ? 'bg-[#093D38]/12 border-[#093D38]/30 text-[#093D38] dark:text-[#7FF9EB]'
+                                          : 'bg-[#D85A40]/12 border-[#D85A40]/30 text-[#D85A40]'
+                                      }`}
+                                    >
+                                      {flag.label}: {on ? 'مفعّل' : 'معطّل'}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              {/* CEFR Notes */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {(['A1', 'A2', 'B1', 'B2'] as CEFRLevel[]).map((lvl) => (
+                                  <label key={lvl} className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">
+                                    ملاحظة مستوى {lvl}
+                                    <input
+                                      type="text"
+                                      value={draftConfig.learningConfig!.cefrNotes?.[lvl] || ''}
+                                      onChange={(e) =>
+                                        setDraftConfig({
+                                          ...draftConfig,
+                                          learningConfig: {
+                                            ...draftConfig.learningConfig!,
+                                            cefrNotes: {
+                                              ...draftConfig.learningConfig!.cefrNotes,
+                                              [lvl]: e.target.value,
+                                            },
+                                          },
+                                        })
+                                      }
+                                      placeholder={`ملاحظة توجيهية لمستوى ${lvl}...`}
+                                      className="mt-1 w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#072B26] border border-[#0D4A42]/15 text-xs"
+                                    />
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           <div className="flex items-center gap-3">
                             <button
                               type="submit"
@@ -946,6 +1143,83 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({ onBack, onNavi
                             )}
                           </div>
                         </form>
+                      )}
+
+                      {/* Learning Engine AI Telemetry + Reported Errors */}
+                      {learningTelemetry && (
+                        <div className="space-y-3">
+                          <h3 className="text-sm font-semibold text-[#093D38] dark:text-[#E8C35A]">
+                            إحصاءات محرك التعلّم والملفات (للمالك فقط)
+                          </h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                            <div className="rounded-xl bg-[#F7F3EA] dark:bg-[#041B18]/80 p-3">
+                              <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">ملفات المتعلمين</p>
+                              <p className="text-base font-bold font-mono-num">{learningTelemetry.totalProfiles}</p>
+                            </div>
+                            <div className="rounded-xl bg-[#F7F3EA] dark:bg-[#041B18]/80 p-3">
+                              <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">الدروس المولدة / الكاش</p>
+                              <p className="text-base font-bold font-mono-num">
+                                {learningTelemetry.totalLessonsGenerated} / {learningTelemetry.aiCacheHitsCount}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-[#F7F3EA] dark:bg-[#041B18]/80 p-3">
+                              <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">طلبات AI / أخطاء</p>
+                              <p className="text-base font-bold font-mono-num">
+                                {learningTelemetry.aiRequestsCount} / {learningTelemetry.aiErrorsCount}
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-[#F7F3EA] dark:bg-[#041B18]/80 p-3">
+                              <p className="text-[11px] text-[#52615D] dark:text-[#9EC5BE]">إجمالي المفردات المحفوظة</p>
+                              <p className="text-base font-bold font-mono-num">{learningTelemetry.totalVocabStoredAcrossProfiles}</p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-2">
+                            <p className="text-xs font-bold text-[#093D38] dark:text-[#E8C35A]">
+                              بلاغات الأخطاء التعليمية ({errorReports.length})
+                            </p>
+                            {errorReports.length === 0 ? (
+                              <p className="text-xs text-[#52615D] dark:text-[#9EC5BE]">
+                                لا توجد بلاغات واردة حالياً.
+                              </p>
+                            ) : (
+                              <div className="space-y-2 max-h-56 overflow-y-auto">
+                                {errorReports.map((rep) => (
+                                  <div
+                                    key={rep.id}
+                                    className="rounded-xl bg-[#F7F3EA] dark:bg-[#041B18]/80 border border-[#0D4A42]/12 p-3 text-xs flex items-start justify-between gap-2"
+                                  >
+                                    <div className="space-y-1">
+                                      <p className="font-bold text-[#093D38] dark:text-white">
+                                        {rep.sourceTitle} · {rep.section}
+                                      </p>
+                                      <p className="text-[#172320] dark:text-[#DCECE8]">{rep.message}</p>
+                                    </div>
+                                    {rep.resolved ? (
+                                      <span className="text-[11px] font-bold text-emerald-700 dark:text-[#7FF9EB] shrink-0">
+                                        تمت المعالجة ✓
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          if (!adminToken) return;
+                                          const updated = await resolveAdminLearningReport(adminToken, rep.id);
+                                          setErrorReports((prev) =>
+                                            prev.map((x) => (x.id === rep.id ? updated : x))
+                                          );
+                                        }}
+                                        className="px-2.5 py-1 rounded-lg bg-[#093D38] text-white text-[11px] font-semibold cursor-pointer shrink-0"
+                                      >
+                                        تحديد كمُعالج
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
 
                       {/* Submitted Suggestions Inbox */}

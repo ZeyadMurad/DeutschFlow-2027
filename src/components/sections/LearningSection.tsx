@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BookOpen, Headphones, Play, Volume2 } from 'lucide-react';
+import { BookOpen, Headphones, Play, Sparkles, Volume2 } from 'lucide-react';
 import { fetchNewsFeed, fetchPodcasts, fetchYouTubeVideos } from '../../services/api';
 import type {
   CEFRLevel,
@@ -8,6 +8,7 @@ import type {
   UILanguage,
   YouTubeVideo,
 } from '../../types/media';
+import { useUserData } from '../../context/UserDataContext';
 import { useGlobalAudio } from '../players/GlobalAudioContext';
 import { SectionShell } from './SectionShell';
 
@@ -35,6 +36,7 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
   onSelectVideo,
 }) => {
   const { playPodcastEpisode, playArticleAudio } = useGlobalAudio();
+  const { openLearningEngine } = useUserData();
   const [cefr, setCefr] = useState<'all' | CEFRLevel>('all');
   const [simplifiedNews, setSimplifiedNews] = useState<NewsArticle[]>([]);
   const [learningPodcasts, setLearningPodcasts] = useState<PodcastShowWithEpisodes[]>([]);
@@ -147,22 +149,42 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24">
+                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#0E4B4B]/8 dark:border-[#3EF2DF]/24">
                   <button
                     type="button"
                     onClick={() => onOpenArticle(art)}
-                    className="flex-1 py-1.5 px-3 rounded-lg bg-[#0E4B4B] text-white text-xs font-medium inline-flex items-center justify-center gap-1 cursor-pointer"
+                    className="flex-1 py-1.5 px-3 rounded-lg bg-[#0E4B4B] text-white text-xs font-medium inline-flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
-                    <span>قراءة وحفظ كلمات</span>
+                    <span>قراءة وحفظ</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => playArticleAudio(art, false)}
-                    className="px-3 py-1.5 rounded-lg bg-[#D85A40]/12 text-[#D85A40] text-xs font-medium inline-flex items-center gap-1 cursor-pointer"
+                    className="px-2.5 py-1.5 rounded-lg bg-[#D85A40]/12 text-[#D85A40] text-xs font-medium inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
                   >
                     {art.audioUrl ? <Headphones className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                     <span>استماع</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      openLearningEngine({
+                        sourceId: art.id,
+                        contentType: 'article',
+                        title: art.title,
+                        text: `${art.title}. ${art.excerpt}`.trim(),
+                        sourceName: art.sourceName,
+                        sourceUrl: art.link,
+                        audioUrl: art.audioUrl,
+                        difficulty: 'simplified',
+                        targetCefr: art.cefrLevel,
+                      })
+                    }
+                    className="px-2.5 py-1.5 rounded-lg bg-[#E8C35A]/22 text-[#7A5710] dark:text-[#E8C35A] text-xs font-bold inline-flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>تعلّم</span>
                   </button>
                 </div>
               </article>
@@ -260,7 +282,7 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
                   {video.channelName} {video.cefrLevel ? `· ${video.cefrLevel}` : ''}
                 </span>
               </button>
-              <div className="p-3.5">
+              <div className="p-3.5 flex items-start justify-between gap-2">
                 <h3
                   onClick={() =>
                     onSelectVideo(
@@ -273,6 +295,26 @@ export const LearningSection: React.FC<LearningSectionProps> = ({
                 >
                   {video.title}
                 </h3>
+                <button
+                  type="button"
+                  onClick={() =>
+                    openLearningEngine({
+                      sourceId: video.id,
+                      contentType: 'video',
+                      title: video.title,
+                      text: `${video.title}. ${video.description}`.trim(),
+                      sourceName: video.channelName,
+                      sourceUrl: video.watchUrl,
+                      videoId: video.videoId,
+                      difficulty: 'simplified',
+                      targetCefr: video.cefrLevel,
+                    })
+                  }
+                  className="px-2.5 py-1 rounded-lg bg-[#E8C35A]/22 text-[#7A5710] dark:text-[#E8C35A] text-xs font-bold inline-flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>تعلّم</span>
+                </button>
               </div>
             </article>
           ))}
