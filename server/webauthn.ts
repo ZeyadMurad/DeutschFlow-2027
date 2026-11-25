@@ -314,7 +314,8 @@ export async function handleRegistrationStart(
   const rawId = typeof body.userId === 'string' ? body.userId.trim().toLowerCase() : '';
   const deviceName = typeof body.deviceName === 'string' ? body.deviceName.trim().slice(0, 60) : '';
 
-  if (!/^[a-z0-9@._-]{3,40}$/.test(rawId)) {
+  // Empty userId is allowed: a unique learner_<hex> id is generated below.
+  if (rawId && !/^[a-z0-9@._-]{3,40}$/.test(rawId)) {
     res.status(400).json({
       error: 'معرّف مستخدم غير صالح. استخدم حروفاً إنجليزية وأرقاماً (3–40 حرفاً) أو اتركه فارغاً ليُنشأ تلقائياً.',
     });
