@@ -607,6 +607,12 @@ export interface LessonQuizQuestion {
   explanationAr: string;
 }
 
+export interface TranscriptSegment {
+  /** Start time in seconds within the original audio/video. */
+  tSec: number;
+  textDe: string;
+}
+
 export interface LearningLesson {
   lessonId: string;
   sourceId: string;
@@ -617,6 +623,11 @@ export interface LearningLesson {
   createdAt: string;
   sourceLimitationNoteAr?: string;
   sourceLimitationNoteEn?: string;
+  /** Honest coverage indicator: full = built from the actual source content, partial = title/description only. */
+  coverage?: 'full' | 'partial' | 'unavailable';
+  coverageNoteAr?: string;
+  /** Timestamped transcript segments (when the spoken/written content was retrieved). */
+  transcriptSegments?: TranscriptSegment[];
   overview: {
     titleDe: string;
     sourceName: string;

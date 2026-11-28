@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { GoogleGenAI, Type } from '@google/genai';
 import { lookupGermanDictionary } from './dictionary.js';
 import { buildLocalLesson, evaluateWritingLocally } from './localLessonEngine.js';
+import { enrichLearningContent } from './transcripts.js';
 import type {
   CEFRLevel,
   LearningContentInput,
@@ -146,10 +147,26 @@ export async function generateLearningLesson(
 
   const ai = getGeminiClient();
 
-  const isSparseSource = cleanText.length < 140;
+  // إثراء المحتوى الحقيقي: جلب النص الفعلي للمصدر (المقال الكامل من صفحة الناشر /
+  // تفريغ التعليقات / النص الرسمي الكامل للخبر / تفريغ صوتي عبر Gemini) قبل بناء
+  // الدرس — أي فشل يعيد بهدوء المسار الشفاف القديم (العنوان + الوصف).
+  const enrichment = await enrichLearningContent({
+    contentType: input.contentType,
+    title: cleanTitle,
+    currentText: cleanText,
+    sourceUrl: input.sourceUrl,
+    videoId: input.videoId,
+    audioUrl: input.audioUrl,
+    sourceName: input.sourceName,
+    ai,
+    model: GEMINI_MODEL,
+  });
+  const effectiveText = (enrichment?.textDe || cleanText).slice(0, 9000);
+
+  const isSparseSource = effectiveText.length < 140;
   const isAudioVideoWithoutTranscript =
     (input.contentType === 'video' || input.contentType === 'podcast' || input.contentType === 'documentary') &&
-    cleanText.length < 240;
+    effectiveText.length < 240;
 
   const sourceLimitationNoteAr = isAudioVideoWithoutTranscript
     ? 'ملاحظة شفافية المصدر: يعتمد هذا الدرس على العنوان والوصف الرسمي المتاح من الناشر لأن النص التفريغي الكامل (Transcript) غير متاح برمجياً.'
@@ -162,6 +179,10 @@ export async function generateLearningLesson(
     : isSparseSource
     ? 'Note: this lesson is grounded strictly in the available publisher excerpt.'
     : undefined;
+
+  // مؤشر التغطية الصادق: هل بُني الدرس على المحتوى الفعلي الكامل أم على المتاح فقط؟
+  const coverage: LearningLesson['coverage'] = enrichment ? 'full' : 'partial';
+  const coverageNoteAr = enrichment ? enrichment.sourceKindAr : sourceLimitationNoteAr;
 
   const prompt = `You are DeutschFlow Learning Engine, an expert German-to-Arabic & English pedagogical designer.
 Transform ONLY the provided real German source content into a structured interactive German lesson.
@@ -178,7 +199,7 @@ SOURCE METADATA:
 - Source Name: ${input.sourceName}
 - Title: ${cleanTitle}
 - Available Text:
-${cleanText || cleanTitle}
+${effectiveText || cleanTitle}
 
 Produce JSON matching the schema with:
 1. overview: topicAr, topicEn, cefrLevel (A1..C2), summaryDe (faithful German summary adapted to requested difficulty), summaryAr (clear Arabic explanation), estimatedMinutes (integer 5..25).
@@ -418,7 +439,7 @@ Produce JSON matching the schema with:
         })).filter((v) => v.word && v.meaningAr)
       : [];
 
-    const sentences = extractCandidateSentences(cleanTitle, cleanText);
+    const sentences = extractCandidateSentences(cleanTitle, effectiveText);
     const lesson: LearningLesson = {
       lessonId: `eng_${hash}`,
       sourceId: input.sourceId,
@@ -429,6 +450,9 @@ Produce JSON matching the schema with:
       createdAt: new Date().toISOString(),
       sourceLimitationNoteAr,
       sourceLimitationNoteEn,
+      coverage,
+      coverageNoteAr,
+      transcriptSegments: enrichment?.segments?.slice(0, 60),
       overview: {
         titleDe: cleanTitle,
         sourceName: input.sourceName,
@@ -530,8 +554,13 @@ Produce JSON matching the schema with:
 
     // Gemini غير مفعّل أو فشل → الدرس المدمج الحتمي بنفس المخطط، مبنياً حصراً
     // على النص الأصلي — لا ردود فارغة ولا اختراع حقائق.
-    const localLesson = await buildLocalLesson(input, hash);
+    const localLesson = await buildLocalLesson({ ...input, text: effectiveText }, hash);
     if (localLesson) {
+      localLesson.coverage = coverage;
+      localLesson.coverageNoteAr = coverageNoteAr;
+      if (enrichment?.segments?.length) {
+        localLesson.transcriptSegments = enrichment.segments.slice(0, 60);
+      }
       if (LESSON_CACHE.size >= 120) {
         const oldestKey = LESSON_CACHE.keys().next().value;
         if (oldestKey) LESSON_CACHE.delete(oldestKey);
